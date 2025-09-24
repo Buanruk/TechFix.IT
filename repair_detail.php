@@ -1,5 +1,8 @@
 <?php
-/* repair_detail.php */
+// ===== DB =====
+$conn = new mysqli("localhost", "phpadmin", "StrongPassword123!", "techfix");
+if ($conn->connect_error) { die("DB Error"); }
+$conn->set_charset("utf8");
 
 /* === โหมดตอบ JSON สำหรับรีเฟรชสถานะ (AJAX) === */
 if (isset($_GET['poll']) && $_GET['poll'] === 'status') {
