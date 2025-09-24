@@ -2,7 +2,7 @@
 // db_connect.php — เชื่อมต่อฐานข้อมูลครั้งเดียว แล้วให้ไฟล์อื่น include มาใช้
 
 $DB_HOST = "localhost";
-$DB_USER = "root";
+$DB_USER = "phpadmin";
 $DB_PASS = "2547";
 $DB_NAME = "techfix";
 
