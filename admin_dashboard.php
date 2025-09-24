@@ -149,12 +149,28 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
   .select:hover{ transform:translateY(-1px); box-shadow:0 10px 22px rgba(10,37,64,.10) }
   .select:focus{ border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.18) }
 
-  /* Table */
+  /* =========================
+     Table (ปรับเฉพาะส่วนตาราง)
+     ========================= */
   .table-wrap{background:#fff;border-top:1px solid var(--line);overflow-x:auto}
-  table{width:100%; border-collapse:separate; border-spacing:0; font-size:14.5px}
-  colgroup col.c-queue{width:110px} colgroup col.c-name{width:220px} colgroup col.c-device{width:200px}
-  colgroup col.c-serial{width:220px} colgroup col.c-room{width:120px} colgroup col.c-issue{width:auto}
-  colgroup col.c-phone{width:170px} colgroup col.c-time{width:200px} colgroup col.c-status{width:150px} colgroup col.c-action{width:180px}
+  table{
+    width:100%;
+    border-collapse:separate; border-spacing:0;
+    font-size:14.5px;
+    table-layout:fixed;              /* คุมความกว้างตามคอลัมน์ */
+  }
+  /* ปรับสัดส่วน: ลดหมายเลขเครื่อง, ขยายปัญหาให้กินที่เหลือ */
+  colgroup col.c-queue{width:100px}
+  colgroup col.c-name{width:210px}
+  colgroup col.c-device{width:180px}
+  colgroup col.c-serial{width:160px}   /* เล็กลง */
+  colgroup col.c-room{width:110px}
+  colgroup col.c-issue{width:auto}     /* กินพื้นที่ที่เหลือ */
+  colgroup col.c-phone{width:160px}
+  colgroup col.c-time{width:190px}
+  colgroup col.c-status{width:140px}
+  colgroup col.c-action{width:180px}
+
   thead th{position:sticky; top:0; z-index:2; background:linear-gradient(180deg,#f7fbff 0,#eef6ff 100%); color:#0f3a66; font-weight:800; letter-spacing:.2px; padding:14px 16px; border-bottom:1px solid var(--line); text-align:left;}
   tbody td{padding:14px 16px; border-top:1px solid var(--line); vertical-align:top; background:#fff;}
   table tr:first-child th:first-child{border-top-left-radius:14px}
@@ -164,23 +180,39 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
   .tc{text-align:center}
   .nowrap{white-space:nowrap}
   .ellipsis{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .issue{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.45;}
+
+  /* อ่านง่ายขึ้น: ปัญหาแสดงหลายบรรทัดและตัดคำยาว */
+  .issue{
+    display:-webkit-box;
+    -webkit-line-clamp:4;            /* จาก 2 -> 4 บรรทัด */
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+    line-height:1.55;
+    white-space:normal;
+    word-break:break-word;
+    overflow-wrap:anywhere;
+  }
 
   /* Badge */
   .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-size:13px;font-weight:800;border:1px solid transparent}
   .badge.new{background:#ffecec;color:var(--red);border-color:#ffd6d6}
-  .badge.in_progress{background:#eef5ff;color:var(--blue-strong);border-color:#d6eaff}
-  .badge.done{background:#e9f9ec;color:var(--green);border-color:#d1f3d8}
+  .badge.in_progress{background:#eef5ff;color:#0b63c8;border-color:#d6eaff}
+  .badge.done{background:#e9f9ec;color:#2e7d32;border-color:#d1f3d8}
 
   /* Select เปลี่ยนสถานะ */
   .status-select{padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:700;cursor:pointer}
   .status-select:focus{border-color:#1e88e5;box-shadow:0 0 0 3px rgba(30,136,229,.15)}
-  .select-new{color:var(--red)} .select-progress{color:var(--blue-strong)} .select-done{color:var(--green)}
+  .select-new{color:var(--red)} .select-progress{color:#0b63c8} .select-done{color:#2e7d32}
   .empty{padding:28px;text-align:center;color:#667085}
 
   @media (max-width:920px){
     .brand-sub{display:none}
     thead th, tbody td{padding:10px 12px}
+    colgroup col.c-name{width:180px}
+    colgroup col.c-serial{width:140px}
+    colgroup col.c-phone{width:140px}
+    colgroup col.c-time{width:170px}
+    .issue{-webkit-line-clamp:3}
   }
 </style>
 </head>
@@ -204,7 +236,6 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
       <div id="navMenu" class="nav-menu" role="menu" aria-hidden="true">
         <a href="index.php" class="menu-item home" role="menuitem">
           <span class="menu-icon" aria-hidden="true">
-            <!-- ไอคอน Home (SVG) -->
             <svg viewBox="0 0 24 24">
               <path d="M3 10.5 12 3l9 7.5"></path>
               <path d="M5 10v10h14V10"></path>
@@ -215,7 +246,6 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
         </a>
         <a href="logout.php" class="menu-item logout" role="menuitem">
           <span class="menu-icon" aria-hidden="true">
-            <!-- ไอคอน Logout (SVG) -->
             <svg viewBox="0 0 24 24">
               <path d="M15 12H3"></path>
               <path d="M11 8l-4 4 4 4"></path>
@@ -268,7 +298,7 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
               <th>อุปกรณ์</th>
               <th>หมายเลขเครื่อง</th>
               <th class="tc">ห้อง</th>
-              <th>ปัญหา</th>
+              <th class="tc">ปัญหา</th>
               <th>เบอร์โทร</th>
               <th>เวลาแจ้ง</th>
               <th class="tc">สถานะ</th>
@@ -289,7 +319,7 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
                 <td class="tc ellipsis"><?= h($row['queue_number']) ?></td>
                 <td class="ellipsis" title="<?= h($row['username']) ?>"><?= h($row['username']) ?></td>
                 <td class="ellipsis" title="<?= h($row['device_type']) ?>"><?= h($row['device_type']) ?></td>
-                <td class="ellipsis" title="<?= h($row['serial_number']) ?>"><?= h($row['serial_number']) ?></td>
+                <td class="ellipsis" title<?= '="'.h($row['serial_number']).'"' ?>><?= h($row['serial_number']) ?></td>
                 <td class="tc"><?= h($room) ?></td>
                 <td class="issue"><?= nl2br(h($row['issue_description'])) ?></td>
                 <td class="nowrap"><?= h($row['phone_number']) ?></td>
