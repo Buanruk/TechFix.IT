@@ -1,6 +1,10 @@
 <?php
 session_start();
 require_once __DIR__ . '/db_connect.php';
+// ===== DB =====
+$conn = new mysqli("localhost", "phpadmin", "StrongPassword123!", "techfix");
+if ($conn->connect_error) { die("DB Error"); }
+$conn->set_charset("utf8");
 
 // ป้องกัน XSS เบื้องต้น
 $username = trim($_POST['username'] ?? '');
