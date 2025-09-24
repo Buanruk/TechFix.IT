@@ -1,0 +1,232 @@
+body {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  background-image: url(image/vhome.png);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  overflow-x: hidden;
+}
+
+.container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  flex-shrink: 0;
+  background: #0d1b2a;
+  color: white;
+  width: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 20px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  border-right: 1px solid rgba(255,255,255,.06);
+}
+
+.main-content {
+  flex: 1;
+  background: #000000;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.logo {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+  letter-spacing: .3px;
+}
+
+.nav-index {
+  list-style: none;
+  padding: 0 10px;
+  margin: 6px 0 0;
+  text-align: center;
+  width: 100%;
+}
+
+.nav-index li {
+  margin: 6px 0;
+  font-size: 1.1rem;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.nav-index li.active {
+  color: white;
+  font-weight: bold;
+  position: relative;
+}
+
+.nav-index li.active::before {
+  content: '';
+  position: absolute;
+  left: -15px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 2px;
+  background: #005f9f;
+}
+
+.socials { margin-top: auto; }
+.socials a {
+  color: white;
+  text-decoration: none;
+  margin: 5px;
+  font-size: 1.2rem;
+}
+
+.main-content {
+  flex: 1;
+  background: #eeeeee;
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+  font-size: 0.9rem;
+}
+
+.menu a {
+  margin-right: 20px;
+  text-decoration: none;
+  color: white;
+}
+
+.icons i { margin-left: 15px; cursor: pointer; }
+
+.product-showcase {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  position: relative;
+}
+
+/* ========= โลโก้/ข้อความ ========== */
+.Logo-image { flex: 1; display: flex; justify-content: center; }
+.Logo-image img { max-width: 300px; height: auto; }
+
+.Logo-info { flex: 1; padding: 40px; color: #000; }
+.Logo-info h1 { font-size: 2.5rem; margin-bottom: 20px; color: #000; }
+.Logo-info p { margin-bottom: 20px; line-height: 1.5; color: #cccccc00; }
+.Logo-info button {
+  padding: 10px 20px; font-size: 1rem; border: none; background: #fff; color: #000; cursor: pointer;
+}
+
+/* ========= Section พื้นหลัง ========= */
+.product-showcase {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #ffffff;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* กล่องกรอบโปสเตอร์ */
+.poster-wrap { width: 100%; height: 100%; }
+
+/* พื้นที่รูป */
+.image {
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+/* รูปภาพ */
+.image img { width: 100%; height: 100%; object-fit: contain; }
+
+/* ===== ให้ product-showcase ไม่ล้น sidebar เมื่อรวมใน .container ===== */
+.container > .product-showcase {
+  width: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* ===== ตกแต่งภาพให้พรีเมียมขึ้น ===== */
+.container > .product-showcase .image {
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(0,0,0,.25);
+  background: #ffffff;
+}
+
+/* ===== ปุ่ม CTA (ใช้ร่วมกันทั้ง แอดมิน และ รายละเอียดแจ้งซ่อม) ===== */
+.nav-index a.btn-detail,
+.nav-index a.btn-admin{
+  display:inline-block;
+  width:100%;
+  padding:10px 14px;
+  border-radius:10px;
+  background:linear-gradient(135deg,#2aa2ff,#0a66b5);
+  color:#fff;
+  font:700 .95rem/1.1 'Montserrat','Tahoma',sans-serif;
+  letter-spacing:.2px;
+  text-decoration:none;
+  box-shadow:0 4px 10px rgba(0,0,0,.15);
+  transition:.12s ease;
+}
+.nav-index a.btn-detail:hover,
+.nav-index a.btn-admin:hover{
+  filter:brightness(1.05);
+  transform:translateY(-1px);
+  box-shadow:0 8px 16px rgba(0,0,0,.2);
+}
+.nav-index a.btn-detail:active,
+.nav-index a.btn-admin:active{
+  filter:brightness(.95);
+  transform:none;
+}
+.nav-index a.btn-detail i,
+.nav-index a.btn-admin i{ font-size:.9em; line-height:1; }
+
+/* ===== Sidebar กว้างขึ้นบนจอใหญ่เพื่อไม่ให้อักษรอัด ===== */
+@media (min-width: 992px) { .sidebar { width: 180px; } }
+@media (min-width: 1280px){ .sidebar { width: 220px; } }
+
+.status-dot {
+  position: relative;
+  display: inline-block;
+  width:16px; height:16px;
+  border-radius:50%;
+  cursor: pointer;
+}
+
+.status-dot::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 125%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+
+.status-dot:hover::after {
+  opacity: 1;
+}

@@ -1,0 +1,108 @@
+{
+  "responseId": "f268a9d0-3def-4d65-81f4-6fbd98c539ab-77d869be",
+  "queryResult": {
+    "queryText": "6457874368",
+    "action": "TechFixIT.TechFixIT-custom",
+    "parameters": {
+      "issue": "ปัญหา: ลำโพงไฟไม่เข้า",
+      "serial": "S1",
+      "floor": "Acc302",
+      "nickname": "Wo",
+      "phone": "6457874368"
+    },
+    "allRequiredParamsPresent": true,
+    "outputContexts": [{
+      "name": "projects/techfix-it-gokf/agent/sessions/f3c3c5c6-0fcc-3691-89b7-642688d6ccba/contexts/techfixit-followup",
+      "parameters": {
+        "device": "แจ้งซ่อมลำโพง",
+        "device.original": "แจ้งซ่อมลำโพง",
+        "issue": "ปัญหา: ลำโพงไฟไม่เข้า",
+        "issue.original": "ปัญหา: ลำโพงไฟไม่เข้า",
+        "serial": "S1",
+        "serial.original": "S1",
+        "floor": "Acc302",
+        "floor.original": "Acc302",
+        "nickname": "Wo",
+        "nickname.original": "Wo",
+        "phone": "6457874368",
+        "phone.original": "6457874368"
+      }
+    }, {
+      "name": "projects/techfix-it-gokf/agent/sessions/f3c3c5c6-0fcc-3691-89b7-642688d6ccba/contexts/techfixit--followup",
+      "lifespanCount": 4,
+      "parameters": {
+        "device": "แจ้งซ่อมลำโพง",
+        "device.original": "แจ้งซ่อมลำโพง",
+        "issue": "ปัญหา: ลำโพงไฟไม่เข้า",
+        "issue.original": "ปัญหา: ลำโพงไฟไม่เข้า",
+        "serial": "S1",
+        "serial.original": "S1",
+        "floor": "Acc302",
+        "floor.original": "Acc302",
+        "nickname": "Wo",
+        "nickname.original": "Wo",
+        "phone": "6457874368",
+        "phone.original": "6457874368"
+      }
+    }, {
+      "name": "projects/techfix-it-gokf/agent/sessions/f3c3c5c6-0fcc-3691-89b7-642688d6ccba/contexts/welcomeintent-followup",
+      "parameters": {
+        "device": "แจ้งซ่อมลำโพง",
+        "device.original": "แจ้งซ่อมลำโพง",
+        "issue": "ปัญหา: ลำโพงไฟไม่เข้า",
+        "issue.original": "ปัญหา: ลำโพงไฟไม่เข้า",
+        "serial": "S1",
+        "serial.original": "S1",
+        "floor": "Acc302",
+        "floor.original": "Acc302",
+        "nickname": "Wo",
+        "nickname.original": "Wo",
+        "phone": "6457874368",
+        "phone.original": "6457874368"
+      }
+    }, {
+      "name": "projects/techfix-it-gokf/agent/sessions/f3c3c5c6-0fcc-3691-89b7-642688d6ccba/contexts/__system_counters__",
+      "parameters": {
+        "no-input": 0.0,
+        "no-match": 0.0,
+        "issue": "ปัญหา: ลำโพงไฟไม่เข้า",
+        "issue.original": "ปัญหา: ลำโพงไฟไม่เข้า",
+        "serial": "S1",
+        "serial.original": "S1",
+        "floor": "Acc302",
+        "floor.original": "Acc302",
+        "nickname": "Wo",
+        "nickname.original": "Wo",
+        "phone": "6457874368",
+        "phone.original": "6457874368"
+      }
+    }],
+    "intent": {
+      "name": "projects/techfix-it-gokf/agent/intents/5eaee604-dc56-40d5-afee-a025ae35144d",
+      "displayName": "TechFix.IT - typeissue",
+      "endInteraction": true
+    },
+    "intentDetectionConfidence": 1.0,
+    "languageCode": "th"
+  },
+  "originalDetectIntentRequest": {
+    "source": "line",
+    "payload": {
+      "data": {
+        "source": {
+          "type": "user",
+          "userId": "U4968636da746eebd090f68f3ee71e0cb"
+        },
+        "type": "message",
+        "message": {
+          "type": "text",
+          "id": "579457872036364717",
+          "text": "6457874368"
+        },
+        "timestamp": "1758215110414",
+        "replyToken": "4c75b08ba8b949dd987ed859687fc6a1"
+      }
+    }
+  },
+  "session": "projects/techfix-it-gokf/agent/sessions/f3c3c5c6-0fcc-3691-89b7-642688d6ccba"
+}
