@@ -8,7 +8,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $APP_BASE = '/techfix';
 
 // DB
-$conn = new mysqli("localhost", "root", "123456", "techfix");
+$conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
 $conn->set_charset("utf8mb4");
 
 // รับเฉพาะ POST
