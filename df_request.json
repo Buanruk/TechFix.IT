@@ -1,80 +1,64 @@
 {
-  "responseId": "f268a9d0-3def-4d65-81f4-6fbd98c539ab-77d869be",
+  "responseId": "4ac19f59-40ce-4337-9fd9-922e3712be64-77d869be",
   "queryResult": {
-    "queryText": "6457874368",
+    "queryText": "0816686404",
     "action": "TechFixIT.TechFixIT-custom",
     "parameters": {
-      "issue": "ปัญหา: ลำโพงไฟไม่เข้า",
-      "serial": "S1",
-      "floor": "Acc302",
-      "nickname": "Wo",
-      "phone": "6457874368"
+      "issue": "ปัญหา: ทำงานช้า",
+      "serial": "ห้อง303-15",
+      "floor": "SBB.302",
+      "nickname": "อ.หน่อย",
+      "phone": "0816686404"
     },
     "allRequiredParamsPresent": true,
     "outputContexts": [{
-      "name": "projects/techfix-it-gokf/agent/sessions/f3c3c5c6-0fcc-3691-89b7-642688d6ccba/contexts/techfixit-followup",
+      "name": "projects/techfix-it-gokf/agent/sessions/9158b27c-8935-35d9-830c-a9775c57d071/contexts/techfixit-followup",
       "parameters": {
-        "device": "แจ้งซ่อมลำโพง",
-        "device.original": "แจ้งซ่อมลำโพง",
-        "issue": "ปัญหา: ลำโพงไฟไม่เข้า",
-        "issue.original": "ปัญหา: ลำโพงไฟไม่เข้า",
-        "serial": "S1",
-        "serial.original": "S1",
-        "floor": "Acc302",
-        "floor.original": "Acc302",
-        "nickname": "Wo",
-        "nickname.original": "Wo",
-        "phone": "6457874368",
-        "phone.original": "6457874368"
+        "device": "ปัญหาเกี่ยวกับคอมพิวเตอร์",
+        "device.original": "ปัญหาเกี่ยวกับคอมพิวเตอร์",
+        "issue": "ปัญหา: ทำงานช้า",
+        "issue.original": "ปัญหา: ทำงานช้า",
+        "serial": "ห้อง303-15",
+        "serial.original": "ห้อง303-15",
+        "floor": "SBB.302",
+        "floor.original": "SBB.302",
+        "nickname": "อ.หน่อย",
+        "nickname.original": "อ.หน่อย",
+        "phone": "0816686404",
+        "phone.original": "0816686404"
       }
     }, {
-      "name": "projects/techfix-it-gokf/agent/sessions/f3c3c5c6-0fcc-3691-89b7-642688d6ccba/contexts/techfixit--followup",
+      "name": "projects/techfix-it-gokf/agent/sessions/9158b27c-8935-35d9-830c-a9775c57d071/contexts/techfixit--followup",
       "lifespanCount": 4,
       "parameters": {
-        "device": "แจ้งซ่อมลำโพง",
-        "device.original": "แจ้งซ่อมลำโพง",
-        "issue": "ปัญหา: ลำโพงไฟไม่เข้า",
-        "issue.original": "ปัญหา: ลำโพงไฟไม่เข้า",
-        "serial": "S1",
-        "serial.original": "S1",
-        "floor": "Acc302",
-        "floor.original": "Acc302",
-        "nickname": "Wo",
-        "nickname.original": "Wo",
-        "phone": "6457874368",
-        "phone.original": "6457874368"
+        "device": "ปัญหาเกี่ยวกับคอมพิวเตอร์",
+        "device.original": "ปัญหาเกี่ยวกับคอมพิวเตอร์",
+        "issue": "ปัญหา: ทำงานช้า",
+        "issue.original": "ปัญหา: ทำงานช้า",
+        "serial": "ห้อง303-15",
+        "serial.original": "ห้อง303-15",
+        "floor": "SBB.302",
+        "floor.original": "SBB.302",
+        "nickname": "อ.หน่อย",
+        "nickname.original": "อ.หน่อย",
+        "phone": "0816686404",
+        "phone.original": "0816686404"
       }
     }, {
-      "name": "projects/techfix-it-gokf/agent/sessions/f3c3c5c6-0fcc-3691-89b7-642688d6ccba/contexts/welcomeintent-followup",
-      "parameters": {
-        "device": "แจ้งซ่อมลำโพง",
-        "device.original": "แจ้งซ่อมลำโพง",
-        "issue": "ปัญหา: ลำโพงไฟไม่เข้า",
-        "issue.original": "ปัญหา: ลำโพงไฟไม่เข้า",
-        "serial": "S1",
-        "serial.original": "S1",
-        "floor": "Acc302",
-        "floor.original": "Acc302",
-        "nickname": "Wo",
-        "nickname.original": "Wo",
-        "phone": "6457874368",
-        "phone.original": "6457874368"
-      }
-    }, {
-      "name": "projects/techfix-it-gokf/agent/sessions/f3c3c5c6-0fcc-3691-89b7-642688d6ccba/contexts/__system_counters__",
+      "name": "projects/techfix-it-gokf/agent/sessions/9158b27c-8935-35d9-830c-a9775c57d071/contexts/__system_counters__",
       "parameters": {
         "no-input": 0.0,
         "no-match": 0.0,
-        "issue": "ปัญหา: ลำโพงไฟไม่เข้า",
-        "issue.original": "ปัญหา: ลำโพงไฟไม่เข้า",
-        "serial": "S1",
-        "serial.original": "S1",
-        "floor": "Acc302",
-        "floor.original": "Acc302",
-        "nickname": "Wo",
-        "nickname.original": "Wo",
-        "phone": "6457874368",
-        "phone.original": "6457874368"
+        "issue": "ปัญหา: ทำงานช้า",
+        "issue.original": "ปัญหา: ทำงานช้า",
+        "serial": "ห้อง303-15",
+        "serial.original": "ห้อง303-15",
+        "floor": "SBB.302",
+        "floor.original": "SBB.302",
+        "nickname": "อ.หน่อย",
+        "nickname.original": "อ.หน่อย",
+        "phone": "0816686404",
+        "phone.original": "0816686404"
       }
     }],
     "intent": {
@@ -90,19 +74,19 @@
     "payload": {
       "data": {
         "source": {
-          "type": "user",
-          "userId": "U4968636da746eebd090f68f3ee71e0cb"
+          "userId": "Ub01014e712b30c14bbacbd01649b9a01",
+          "type": "user"
         },
         "type": "message",
+        "timestamp": "1758791928227",
         "message": {
+          "text": "0816686404",
           "type": "text",
-          "id": "579457872036364717",
-          "text": "6457874368"
+          "id": "580425611986862315"
         },
-        "timestamp": "1758215110414",
-        "replyToken": "4c75b08ba8b949dd987ed859687fc6a1"
+        "replyToken": "6c8bcea3612e42dda332aa06f1995679"
       }
     }
   },
-  "session": "projects/techfix-it-gokf/agent/sessions/f3c3c5c6-0fcc-3691-89b7-642688d6ccba"
+  "session": "projects/techfix-it-gokf/agent/sessions/9158b27c-8935-35d9-830c-a9775c57d071"
 }

@@ -59,7 +59,7 @@ if (!empty($missing)) {
 }
 
 // ==== เชื่อมต่อฐานข้อมูล ====
-$conn = new mysqli("localhost", "root", "", "techfix");
+$conn = new mysqli("localhost", "root", "123456", "techfix");
 if ($conn->connect_error) {
     echo json_encode(["fulfillmentText" => "เชื่อมต่อฐานข้อมูลไม่ได้"], JSON_UNESCAPED_UNICODE);
     exit;

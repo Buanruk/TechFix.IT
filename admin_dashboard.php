@@ -1,6 +1,6 @@
 <?php
 // ===== DB =====
-$conn = new mysqli("localhost", "phpadmin", "2547", "techfix");
+$conn = new mysqli("localhost", "root", "123456", "techfix");
 if ($conn->connect_error) { die("DB Error"); }
 $conn->set_charset("utf8");
 
