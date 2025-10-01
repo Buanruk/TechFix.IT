@@ -330,7 +330,7 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
                   <span class="badge <?= $s ?>"><?= statusIcon($s) ?> <?= h(statusText($s)) ?></span>
                 </td>
                 <td class="tc">
-                  <form method="POST" action="/techfix/end/update_status.php">
+                  <form method="POST" action="/techfix/update_status.php">
                 <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                 <select name="status" class="status-select <?= $selectClass ?>" onchange="this.form.submit()">
                 <option value="new"         <?= $s==='new'?'selected':'' ?>>❌ ยังไม่ซ่อม</option>
