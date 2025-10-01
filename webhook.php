@@ -6,13 +6,13 @@ date_default_timezone_set('Asia/Bangkok');
 header('Content-Type: application/json; charset=utf-8');
 
 /* =========================
-   Utils: log & safe helpers
+   Utils
    ========================= */
 function log_to($fname, $text) {
   @file_put_contents(__DIR__ . "/$fname", '['.date('Y-m-d H:i:s')."] $text\n", FILE_APPEND);
 }
 
-/** ค้นหา key= userId ใน array แบบ recursive (กันกรณี Dialogflow/LINE เปลี่ยนโครง) */
+/** หา userId แบบ recursive */
 function find_user_id_recursive($arr) {
   if (!is_array($arr)) return null;
   foreach ($arr as $k => $v) {
@@ -25,12 +25,22 @@ function find_user_id_recursive($arr) {
   return null;
 }
 
+/** ลอก prefix "ปัญหา:" / "อาการ:" / "issue:" ออกกันซ้ำ */
+function clean_issue($txt) {
+  $txt = html_entity_decode((string)$txt, ENT_QUOTES, 'UTF-8');
+  // ตัดคำนำหน้าที่มักใส่มา และช่องว่าง/เครื่องหมายหลังคำนำหน้า
+  $txt = preg_replace('/^\s*(ปัญหา(เรื่อง)?|อาการ|issue)\s*[:：\-]?\s*/iu', '', $txt);
+  // เก็บเว้นวรรคสวย ๆ
+  $txt = preg_replace('/\s+/u', ' ', trim($txt));
+  return $txt;
+}
+
 /* =========================
    รับข้อมูลจาก Dialogflow
    ========================= */
 $raw = file_get_contents('php://input');
 $data = json_decode($raw, true);
-log_to('df_request.log', $raw); // เก็บ raw ล่าสุดไว้ตรวจ
+log_to('df_request.log', $raw);
 
 // ข้อความผู้ใช้ (ถ้ามี)
 $userMessage = trim($data['queryResult']['queryText'] ?? '');
@@ -49,18 +59,16 @@ if (preg_match('/สวัสดี|เริ่มใหม่/i', $userMessage
    ========================= */
 $lineUserId = null;
 
-/* 1) วิธีเจาะ path ที่พบบ่อย */
 $odi = $data['originalDetectIntentRequest']['payload'] ?? [];
-if (!$lineUserId && !empty($odi['data']['source']['userId']))      $lineUserId = $odi['data']['source']['userId'];
+if (!$lineUserId && !empty($odi['data']['source']['userId']))            $lineUserId = $odi['data']['source']['userId'];
 if (!$lineUserId && !empty($odi['data']['events'][0]['source']['userId'])) $lineUserId = $odi['data']['events'][0]['source']['userId'];
-if (!$lineUserId && !empty($odi['source']['userId']))               $lineUserId = $odi['source']['userId'];
-if (!$lineUserId && !empty($data['originalDetectIntentRequest']['source']['userId'])) $lineUserId = $data['originalDetectIntentRequest']['source']['userId'];
+if (!$lineUserId && !empty($odi['source']['userId']))                     $lineUserId = $odi['source']['userId'];
+if (!$lineUserId && !empty($data['originalDetectIntentRequest']['source']['userId']))
+  $lineUserId = $data['originalDetectIntentRequest']['source']['userId'];
 
-/* 2) ถ้ายังไม่ได้ → ค้นหาแบบ recursive ทั้ง payload */
 if (!$lineUserId) $lineUserId = find_user_id_recursive($data['originalDetectIntentRequest'] ?? []);
 if (!$lineUserId) $lineUserId = find_user_id_recursive($odi);
 
-/* log ให้รู้ว่าดึงได้ไหม */
 log_to('df_userid.log', 'userId=' . ($lineUserId ?: 'NULL'));
 
 /* =========================
@@ -70,7 +78,7 @@ $p = $data['queryResult']['parameters'] ?? [];
 $nickname = $p['nickname'] ?? null;
 $serial   = $p['serial'] ?? null;
 $phone    = $p['phone'] ?? null;
-$issue    = $p['issue'] ?? null;
+$issue    = clean_issue($p['issue'] ?? '');   // <<<<<< ทำความสะอาดที่นี่
 $device   = $p['device'] ?? null;
 $floor    = $p['floor'] ?? null;
 
@@ -87,7 +95,7 @@ if (!$nickname) $missing[] = "ชื่อเล่น";
 if (!$serial)   $missing[] = "หมายเลขเครื่อง";
 if (!$phone)    $missing[] = "เบอร์โทร";
 if (!$device)   $missing[] = "อุปกรณ์";
-if (!$issue)    $missing[] = "ปัญหา";
+if ($issue==='')$missing[] = "ปัญหา";
 if (!$floor)    $missing[] = "เลขห้อง";
 
 if (!empty($missing)) {
@@ -143,7 +151,7 @@ $stmt->execute();
 $insertedId = $stmt->insert_id;
 $stmt->close();
 
-/* (ออปชัน) ผูก userId ย้อนหลังให้ทุกงานที่มีเบอร์เดียวกัน */
+/* (ออปชัน) ผูก userId ย้อนหลังให้ทุกงานที่เบอร์เดียวกัน */
 if ($lineUserId && $phone) {
   $u = $conn->prepare("UPDATE device_reports
                        SET line_user_id = ?
@@ -165,7 +173,7 @@ $responseText =
   "🔧 อุปกรณ์: $device\n".
   "🔢 หมายเลขเครื่อง: $serial\n".
   "🏢 ห้อง: $floor\n".
-  "❗ ปัญหา: $issue\n".
+  "❗ ปัญหา: $issue\n".        // << ใช้ข้อความที่ถูกลอก prefix แล้ว
   "📞 จะติดต่อกลับที่เบอร์: $phone";
 
 echo json_encode([
