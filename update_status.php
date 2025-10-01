@@ -6,7 +6,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 // ==== CONFIG ====
 $APP_BASE = '/techfix';
-$LINE_CHANNEL_ACCESS_TOKEN = 'PUT_YOUR_LINE_CHANNEL_ACCESS_TOKEN_HERE'; // <<< ใส่ Token ของคุณ
+$LINE_CHANNEL_ACCESS_TOKEN = '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU='; // <<< ใส่ Token ของคุณ
 
 // ==== DB CONNECT ====
 $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
