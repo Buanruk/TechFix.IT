@@ -281,85 +281,50 @@ $conn->close();
 ?>
 
 <script>
-const statusMap = {
-  new:         {label: "รอดำเนินการ",  color: "red"},
-  in_progress: {label: "กำลังซ่อม",    color: "blue"},
-  done:        {label: "ซ่อมเสร็จแล้ว", color: "green"},
-};
+  // แผนที่สถานะ -> ป้ายและสี
+  const statusMap = {
+    new:         {label: "รอดำเนินการ",  color: "red"},
+    in_progress: {label: "กำลังซ่อม",    color: "blue"},
+    done:        {label: "ซ่อมเสร็จแล้ว", color: "green"},
+  };
 
-function renderStatusCell(st){
-  const color = st?.color || "gray";
-  const label = st?.label || "ไม่ทราบ";
-  return <span class="status-dot ${color}"></span> <span class="status-label txt-${color}">${label}</span>;
-}
+  // สร้าง HTML ของเซลล์สถานะ
+  function renderStatusCell(st){
+    const color = (st && st.color) ? st.color : "gray";
+    const label = (st && st.label) ? st.label : "ไม่ทราบ";
+    return `<span class="status-dot ${color}"></span><span class="status-label txt-${color}">${label}</span>`;
+  }
 
-async function refreshTickets(){
-  try{
-    const url = new URL(window.location.href);
-    url.searchParams.set('poll', 'status'); // ดึงเฉพาะ id/status ล่าสุด
-    const res = await fetch(url, {cache:"no-store"});
-    if(!res.ok) return;
-    const data = await res.json();
-    if(!Array.isArray(data)) return;
+  // ดึงสถานะล่าสุดแล้วอัปเดตเฉพาะแถวที่มีอยู่ในหน้านี้
+  async function refreshTickets(){
+    try{
+      const url = new URL(window.location.href);
+      url.searchParams.set('poll', 'status'); // ขอเฉพาะ id/status
+      const res = await fetch(url.toString(), { cache: "no-store" });
+      if (!res.ok) return;
 
-    data.forEach(row => {
-      const tr = document.querySelector(#ticket-body tr[data-id="${row.id}"]);
-      if(tr){
-        const st = statusMap[row.status] || {label:"ไม่ทราบ", color:"gray"};
+      const data = await res.json();
+      if (!Array.isArray(data)) return;
+
+      for (const row of data) {
+        const tr = document.querySelector(`#ticket-body tr[data-id="${row.id}"]`);
+        if (!tr) continue;
+
+        const st = statusMap[row.status] || {label: "ไม่ทราบ", color: "gray"};
         const cell = tr.querySelector(".status-cell");
         if (cell) cell.innerHTML = renderStatusCell(st);
       }
-    });
-  }catch(e){
-    console.error("Refresh error", e);
-  }
-}
-refreshTickets();
-setInterval(refreshTickets, 10000);
-</script>
-
-<div id="liveNotice" class="live-notice" role="status" aria-live="polite">
-  มีการอัปเดตใหม่ กำลังโหลดข้อมูล...
-</div>
-
-<script>
-  // === ตั้งค่า ===
-  const PING_URL = '/changes_ping.php';   // ถ้าโปรเจกต์อยู่ในโฟลเดอร์ย่อย แก้เป็น '/techfix/changes_ping.php'
-  const POLL_MS  = 5000;                  // ถี่แค่ไหน (มิลลิวินาที) แนะนำ 5000 = 5 วินาที
-  let lastSig = null;                      // เก็บลายเซ็นของรอบก่อน
-
-  async function pingChanges() {
-    try {
-      const res = await fetch(PING_URL, { cache: 'no-store' });
-      if (!res.ok) return;
-      const j = await res.json();
-      if (!j || !j.sig) return;
-
-      if (lastSig === null) {
-        // เพิ่งเปิดหน้า: ตั้งต้นด้วยค่าล่าสุด เพื่อไม่ให้รีเฟรชทันที
-        lastSig = j.sig;
-        return;
-      }
-
-      if (j.sig !== lastSig) {
-        // มีการเปลี่ยนแปลง: โชว์แถบแจ้งเตือน แล้วรีเฟรช
-        lastSig = j.sig;
-        const n = document.getElementById('liveNotice');
-        if (n) n.style.display = 'inline-flex';
-        setTimeout(() => location.reload(), 800);
-      }
     } catch (e) {
-      // เงียบ ๆ ไป ไม่ต้องรบกวนผู้ใช้
+      console.error("Refresh error", e);
     }
   }
 
-  // โพลลิ่งทุก POLL_MS และยิงทันทีตอนเปิด/กลับมาโฟกัสหน้า
-  let pollTimer = setInterval(pingChanges, POLL_MS);
-  window.addEventListener('load', pingChanges);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') pingChanges();
-  });
+  // เรียกครั้งแรก และตั้ง interval ให้อัปเดตอัตโนมัติ
+  refreshTickets();
+  setInterval(refreshTickets, 8000); // ทุก 8 วิ
 </script>
+
+
 
 </body>
 </html>
