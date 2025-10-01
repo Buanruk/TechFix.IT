@@ -81,64 +81,6 @@
   <!-- ===== Footer ===== -->
   <footer class="footer">
     <p>© <?php echo date('Y'); ?> TechFix.it — บริการซ่อมอุปกรณ์ไฟฟ้าครบวงจร</p>
-  </footer>
-
-
- <!-- ===== Live update notice + auto refresh (วางไว้เหนือ </body>) ===== -->
-<style>
-  .live-notice{
-    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
-    background: #0b63c8; color: #fff; padding: 10px 14px; border-radius: 12px;
-    box-shadow: 0 10px 24px rgba(15,40,80,.25); font-weight: 800;
-    display: none; z-index: 2000;
-  }
-</style>
-
-<div id="liveNotice" class="live-notice" role="status" aria-live="polite">
-  มีการอัปเดตใหม่ กำลังโหลดข้อมูล...
-</div>
-
-<script>
-  // === ตั้งค่าเส้นทางไฟล์ ping ===
-  const PING_URL = '/changes_ping.php';          // <-- ถ้าไฟล์อยู่รากเว็บ
-  // const PING_URL = '/techfix/changes_ping.php'; // <-- ถ้าไฟล์อยู่ในโฟลเดอร์โปรเจกต์
-
-  const POLL_MS  = 5000;   // ยิงเช็คทุก 5 วินาที
-  let lastSig = null;      // เก็บลายเซ็นรอบก่อน
-
-  async function pingChanges() {
-    try {
-      const res = await fetch(PING_URL, { cache: 'no-store' });
-      if (!res.ok) return;
-      const j = await res.json();
-      if (!j || !j.sig) return;
-
-      if (lastSig === null) {
-        // ครั้งแรก: ตั้งต้นด้วยค่าล่าสุด ไม่รีหน้า
-        lastSig = j.sig;
-        return;
-      }
-
-      if (j.sig !== lastSig) {
-        // มีการเปลี่ยนแปลง: โชว์แถบแจ้งเตือน แล้วรีเฟรช
-        lastSig = j.sig;
-        const n = document.getElementById('liveNotice');
-        if (n) n.style.display = 'inline-flex';
-        setTimeout(() => location.reload(), 800);
-      }
-    } catch (e) {
-      // เงียบ ๆ ไป ไม่ต้องเตือนผู้ใช้
-    }
-  }
-
-  // ยิงทันทีเมื่อโหลดหน้า / กลับมาโฟกัส / และโพลลิ่งทุก POLL_MS
-  let pollTimer = setInterval(pingChanges, POLL_MS);
-  window.addEventListener('load', pingChanges);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') pingChanges();
-  });
-</script>
-<!-- ===== End live update ===== -->
- 
+  </footer> 
 </body>
 </html>
