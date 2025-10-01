@@ -318,5 +318,48 @@ refreshTickets();
 setInterval(refreshTickets, 10000);
 </script>
 
+<div id="liveNotice" class="live-notice" role="status" aria-live="polite">
+  มีการอัปเดตใหม่ กำลังโหลดข้อมูล...
+</div>
+
+<script>
+  // === ตั้งค่า ===
+  const PING_URL = '/changes_ping.php';   // ถ้าโปรเจกต์อยู่ในโฟลเดอร์ย่อย แก้เป็น '/techfix/changes_ping.php'
+  const POLL_MS  = 5000;                  // ถี่แค่ไหน (มิลลิวินาที) แนะนำ 5000 = 5 วินาที
+  let lastSig = null;                      // เก็บลายเซ็นของรอบก่อน
+
+  async function pingChanges() {
+    try {
+      const res = await fetch(PING_URL, { cache: 'no-store' });
+      if (!res.ok) return;
+      const j = await res.json();
+      if (!j || !j.sig) return;
+
+      if (lastSig === null) {
+        // เพิ่งเปิดหน้า: ตั้งต้นด้วยค่าล่าสุด เพื่อไม่ให้รีเฟรชทันที
+        lastSig = j.sig;
+        return;
+      }
+
+      if (j.sig !== lastSig) {
+        // มีการเปลี่ยนแปลง: โชว์แถบแจ้งเตือน แล้วรีเฟรช
+        lastSig = j.sig;
+        const n = document.getElementById('liveNotice');
+        if (n) n.style.display = 'inline-flex';
+        setTimeout(() => location.reload(), 800);
+      }
+    } catch (e) {
+      // เงียบ ๆ ไป ไม่ต้องรบกวนผู้ใช้
+    }
+  }
+
+  // โพลลิ่งทุก POLL_MS และยิงทันทีตอนเปิด/กลับมาโฟกัสหน้า
+  let pollTimer = setInterval(pingChanges, POLL_MS);
+  window.addEventListener('load', pingChanges);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') pingChanges();
+  });
+</script>
+
 </body>
 </html>
