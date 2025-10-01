@@ -7,6 +7,11 @@ $conn->set_charset("utf8");
 // ===== รับค่าสถานะ =====
 $filter = $_GET['status'] ?? 'all';
 
+// ===== ตั้งค่าการแบ่งหน้า =====
+$perPage = 10;
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset = ($page - 1) * $perPage;
+
 // ===== สรุปจำนวนแต่ละสถานะ (การ์ดสรุป) =====
 $stat = ['new'=>0,'in_progress'=>0,'done'=>0,'all'=>0];
 $qr = $conn->query("SELECT status, COUNT(*) AS c FROM device_reports GROUP BY status");
@@ -18,12 +23,28 @@ if ($qr) {
   }
 }
 
-// ===== โหลดรายการตามสถานะ =====
+// ===== นับจำนวนข้อมูลทั้งหมดตามตัวกรอง เพื่อคำนวณจำนวนหน้า =====
 if ($filter === 'all') {
-  $stmt = $conn->prepare("SELECT * FROM device_reports ORDER BY id DESC");
+  $countSql = "SELECT COUNT(*) AS total FROM device_reports";
+  $countStmt = $conn->prepare($countSql);
 } else {
-  $stmt = $conn->prepare("SELECT * FROM device_reports WHERE status = ? ORDER BY id DESC");
-  $stmt->bind_param("s", $filter);
+  $countSql = "SELECT COUNT(*) AS total FROM device_reports WHERE status = ?";
+  $countStmt = $conn->prepare($countSql);
+  $countStmt->bind_param("s", $filter);
+}
+$countStmt->execute();
+$countRes = $countStmt->get_result();
+$totalRows = (int)($countRes->fetch_assoc()['total'] ?? 0);
+$totalPages = max(1, (int)ceil($totalRows / $perPage));
+if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
+
+// ===== โหลดรายการตามสถานะ + LIMIT/OFFSET =====
+if ($filter === 'all') {
+  $stmt = $conn->prepare("SELECT * FROM device_reports ORDER BY id DESC LIMIT ? OFFSET ?");
+  $stmt->bind_param("ii", $perPage, $offset);
+} else {
+  $stmt = $conn->prepare("SELECT * FROM device_reports WHERE status = ? ORDER BY id DESC LIMIT ? OFFSET ?");
+  $stmt->bind_param("sii", $filter, $perPage, $offset);
 }
 $stmt->execute();
 $result = $stmt->get_result();
@@ -42,9 +63,15 @@ function statusIcon($s){
     'new'         => '❌',
     'in_progress' => '🔧',
     'done'        => '✅',
+    default       => '❓',
   };
 }
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+function pageUrl($p){
+  $status = $_GET['status'] ?? 'all';
+  $p = max(1,(int)$p);
+  return '?status='.urlencode($status).'&page='.$p;
+}
 ?>
 <!doctype html>
 <html lang="th">
@@ -113,11 +140,8 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
   .menu-item.logout{color:#c62828}
   .menu-item.logout:hover{background:#ffecec; color:#b71c1c}
 
-  /* ไอคอน SVG */
-  .menu-icon{
-    width:18px; height:18px; display:inline-block; flex:0 0 18px;
-  }
-  .menu-icon svg{width:18px; height:18px; display:block; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round}
+  .menu-icon{ width:18px; height:18px; display:inline-block; flex:0 0 18px;}
+  .menu-icon svg{width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round}
 
   /* Layout */
   .shell{padding:20px}
@@ -134,7 +158,7 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
   .kpi.new .num{color:var(--red)} .kpi.progress .num{color:var(--blue-strong)} .kpi.done .num{color:var(--green)}
 
   /* Filter */
-  .toolbar{display:flex; align-items:center; justify-content:center; gap:12px; padding:12px 18px; color:#667085}
+  .toolbar{display:flex; align-items:center; justify-content:center; gap:12px; padding:12px 18px; color:#667085; flex-wrap:wrap}
   .label{display:flex; align-items:center; gap:8px; font-weight:800; color:#0a2540; letter-spacing:.2px}
   .select{
     -webkit-appearance:none; -moz-appearance:none; appearance:none;
@@ -150,22 +174,22 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
   .select:focus{ border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.18) }
 
   /* =========================
-     Table (ปรับเฉพาะส่วนตาราง)
+     Table
      ========================= */
   .table-wrap{background:#fff;border-top:1px solid var(--line);overflow-x:auto}
   table{
     width:100%;
     border-collapse:separate; border-spacing:0;
     font-size:14.5px;
-    table-layout:fixed;              /* คุมความกว้างตามคอลัมน์ */
+    table-layout:fixed;
   }
   /* ปรับสัดส่วน: ลดหมายเลขเครื่อง, ขยายปัญหาให้กินที่เหลือ */
   colgroup col.c-queue{width:100px}
   colgroup col.c-name{width:210px}
   colgroup col.c-device{width:180px}
-  colgroup col.c-serial{width:160px}   /* เล็กลง */
+  colgroup col.c-serial{width:160px}
   colgroup col.c-room{width:110px}
-  colgroup col.c-issue{width:auto}     /* กินพื้นที่ที่เหลือ */
+  colgroup col.c-issue{width:auto}
   colgroup col.c-phone{width:160px}
   colgroup col.c-time{width:190px}
   colgroup col.c-status{width:140px}
@@ -180,11 +204,9 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
   .tc{text-align:center}
   .nowrap{white-space:nowrap}
   .ellipsis{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-
-  /* อ่านง่ายขึ้น: ปัญหาแสดงหลายบรรทัดและตัดคำยาว */
   .issue{
     display:-webkit-box;
-    -webkit-line-clamp:4;            /* จาก 2 -> 4 บรรทัด */
+    -webkit-line-clamp:4;
     -webkit-box-orient:vertical;
     overflow:hidden;
     line-height:1.55;
@@ -205,6 +227,24 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
   .select-new{color:var(--red)} .select-progress{color:#0b63c8} .select-done{color:#2e7d32}
   .empty{padding:28px;text-align:center;color:#667085}
 
+  /* ===== Pagination ===== */
+  .pager{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:16px; background:#fff; border-top:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  .pager a, .pager span{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:40px; height:40px; padding:0 12px;
+    border:1px solid var(--line); border-radius:10px;
+    text-decoration:none; color:#0b2440; font-weight:800;
+    background:#fff;
+  }
+  .pager a:hover{background:#f3f8ff; border-color:#d6eaff}
+  .pager .active{background:#e8f2ff; border-color:#b9dcff; color:#0b63c8}
+  .pager .disabled{opacity:.45; pointer-events:none}
+
+  /* ===== มือถือ: ซ่อนบางคอลัมน์ + ทำเป็นแถวการ์ดอ่านง่าย ===== */
   @media (max-width:920px){
     .brand-sub{display:none}
     thead th, tbody td{padding:10px 12px}
@@ -213,6 +253,35 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
     colgroup col.c-phone{width:140px}
     colgroup col.c-time{width:170px}
     .issue{-webkit-line-clamp:3}
+  }
+
+  /* ซ่อนคอลัมน์รองบนจอเล็กมาก และแสดง label ต่อแถว */
+  @media (max-width:680px){
+    thead{display:none}
+    table{border-collapse:collapse}
+    tbody tr{
+      display:block;
+      border:1px solid var(--line);
+      border-radius:14px;
+      margin:12px;
+      box-shadow:0 8px 18px rgba(15,40,80,.06);
+      overflow:hidden;
+    }
+    tbody td{
+      display:flex; gap:10px; align-items:flex-start;
+      border-top:1px solid var(--line);
+    }
+    tbody tr td:first-child{border-top:none}
+    tbody td::before{
+      content:attr(data-label);
+      flex:0 0 110px;
+      font-weight:800; color:#0f3a66;
+      opacity:.9;
+    }
+    /* ซ่อนบางคอลัมน์ที่ยาวเกินความจำเป็น */
+    td.hide-sm{display:none}
+    .nowrap{white-space:normal}
+    .ellipsis{white-space:normal}
   }
 </style>
 </head>
@@ -281,6 +350,8 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
           <option value="in_progress" <?= $filter==='in_progress' ? 'selected' : '' ?>>🔧 กำลังซ่อม</option>
           <option value="done"        <?= $filter==='done' ? 'selected' : '' ?>>✅ ซ่อมเสร็จ</option>
         </select>
+        <!-- รักษาหน้าปัจจุบันให้เป็น 1 เมื่อเปลี่ยนตัวกรอง -->
+        <input type="hidden" name="page" value="1">
       </form>
 
       <!-- Table -->
@@ -316,29 +387,30 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
                 $selectClass = $s==='new' ? 'select-new' : ($s==='in_progress' ? 'select-progress' : 'select-done');
               ?>
               <tr>
-                <td class="tc ellipsis"><?= h($row['queue_number']) ?></td>
-                <td class="ellipsis" title="<?= h($row['username']) ?>"><?= h($row['username']) ?></td>
-                <td class="ellipsis" title="<?= h($row['device_type']) ?>"><?= h($row['device_type']) ?></td>
-                <td class="ellipsis" title<?= '="'.h($row['serial_number']).'"' ?>><?= h($row['serial_number']) ?></td>
-                <td class="tc"><?= h($room) ?></td>
-                <td class="issue"><?= nl2br(h($row['issue_description'])) ?></td>
-                <td class="nowrap"><?= h($row['phone_number']) ?></td>
-                <td class="nowrap" title="<?= h($row['report_date']) ?>">
+                <td class="tc ellipsis" data-label="คิว"><?= h($row['queue_number']) ?></td>
+                <td class="ellipsis" data-label="ชื่อ-สกุล" title="<?= h($row['username']) ?>"><?= h($row['username']) ?></td>
+                <td class="ellipsis" data-label="อุปกรณ์" title="<?= h($row['device_type']) ?>"><?= h($row['device_type']) ?></td>
+                <td class="ellipsis hide-sm" data-label="หมายเลขเครื่อง" title<?= '="'.h($row['serial_number']).'"' ?>><?= h($row['serial_number']) ?></td>
+                <td class="tc" data-label="ห้อง"><?= h($room) ?></td>
+                <td class="issue" data-label="ปัญหา"><?= nl2br(h($row['issue_description'])) ?></td>
+                <td class="nowrap hide-sm" data-label="เบอร์โทร"><?= h($row['phone_number']) ?></td>
+                <td class="nowrap" data-label="เวลาแจ้ง" title="<?= h($row['report_date']) ?>">
                   <?= h(@date('d/m/Y H:i', strtotime($row['report_date'])) ?: $row['report_date']) ?>
                 </td>
-                <td class="tc">
+                <td class="tc" data-label="สถานะ">
                   <span class="badge <?= $s ?>"><?= statusIcon($s) ?> <?= h(statusText($s)) ?></span>
                 </td>
-                <td class="tc">
+                <td class="tc" data-label="เปลี่ยนสถานะ">
                   <form method="POST" action="/update_status.php">
-                <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-                <select name="status" class="status-select <?= $selectClass ?>" onchange="this.form.submit()">
-                <option value="new"         <?= $s==='new'?'selected':'' ?>>❌ ยังไม่ซ่อม</option>
-                <option value="in_progress" <?= $s==='in_progress'?'selected':'' ?>>🔧 กำลังซ่อม</option>
-                <option value="done"        <?= $s==='done'?'selected':'' ?>>✅ ซ่อมเสร็จ</option>
-                </select>
-              </form>
-
+                    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                    <!-- รักษาหน้าปัจจุบันหลัง submit -->
+                    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+                    <select name="status" class="status-select <?= $selectClass ?>" onchange="this.form.submit()">
+                      <option value="new"         <?= $s==='new'?'selected':'' ?>>❌ ยังไม่ซ่อม</option>
+                      <option value="in_progress" <?= $s==='in_progress'?'selected':'' ?>>🔧 กำลังซ่อม</option>
+                      <option value="done"        <?= $s==='done'?'selected':'' ?>>✅ ซ่อมเสร็จ</option>
+                    </select>
+                  </form>
                 </td>
               </tr>
             <?php endwhile; ?>
@@ -346,6 +418,41 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination -->
+      <nav class="pager" aria-label="เปลี่ยนหน้า">
+        <?php
+          $prev = $page - 1;
+          $next = $page + 1;
+        ?>
+        <a class="<?= $page<=1 ? 'disabled':'' ?>" href="<?= $page<=1 ? '#' : h(pageUrl($prev)) ?>" aria-label="ก่อนหน้า">«</a>
+
+        <?php
+          // แสดงเลขหน้าแบบกระชับ: ช่วงรอบๆ หน้าปัจจุบัน
+          $window = 2; // หน้าก่อน/หลัง
+          $start = max(1, $page - $window);
+          $end   = min($totalPages, $page + $window);
+
+          if ($start > 1){
+            echo '<a href="'.h(pageUrl(1)).'">1</a>';
+            if ($start > 2) echo '<span class="disabled">…</span>';
+          }
+          for($p=$start; $p<=$end; $p++){
+            if ($p == $page) echo '<span class="active">'.$p.'</span>';
+            else echo '<a href="'.h(pageUrl($p)).'">'.$p.'</a>';
+          }
+          if ($end < $totalPages){
+            if ($end < $totalPages-1) echo '<span class="disabled">…</span>';
+            echo '<a href="'.h(pageUrl($totalPages)).'">'.$totalPages.'</a>';
+          }
+        ?>
+
+        <a class="<?= $page>=$totalPages ? 'disabled':'' ?>" href="<?= $page>=$totalPages ? '#' : h(pageUrl($next)) ?>" aria-label="ถัดไป">»</a>
+
+        <!-- แสดงสรุป -->
+        <span class="disabled" style="border:none">หน้า <?= $page ?> / <?= $totalPages ?> • ทั้งหมด <?= number_format($totalRows) ?> รายการ</span>
+      </nav>
+
     </section>
 
     <div class="footer" style="text-align:center;color:#667085;margin-top:18px">
