@@ -203,3 +203,13 @@ img{ max-width:100%; height:auto; }
 }
 .profile-btn.avatar:active{ transform:scale(.96); }
 .profile-btn.avatar svg{ width:100%; height:100%; display:block; border-radius:50%; }
+
+/* ปุ่มลบ */
+.btn-del{
+  display:inline-flex; align-items:center; gap:6px;
+  margin-top:8px; padding:6px 10px;
+  border:1px solid #ffd6d6; border-radius:10px;
+  background:#ffecec; color:#c62828; font-weight:800;
+  cursor:pointer;
+}
+.btn-del:hover{ background:#ffdfe0; }

@@ -401,17 +401,26 @@ function pageUrl($p){
                   <span class="badge <?= $s ?>"><?= statusIcon($s) ?> <?= h(statusText($s)) ?></span>
                 </td>
                 <td class="tc" data-label="เปลี่ยนสถานะ">
-                  <form method="POST" action="/update_status.php">
-                    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-                    <!-- รักษาหน้าปัจจุบันหลัง submit -->
-                    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
-                    <select name="status" class="status-select <?= $selectClass ?>" onchange="this.form.submit()">
-                      <option value="new"         <?= $s==='new'?'selected':'' ?>>❌ ยังไม่ซ่อม</option>
-                      <option value="in_progress" <?= $s==='in_progress'?'selected':'' ?>>🔧 กำลังซ่อม</option>
-                      <option value="done"        <?= $s==='done'?'selected':'' ?>>✅ ซ่อมเสร็จ</option>
-                    </select>
-                  </form>
-                </td>
+  <!-- เปลี่ยนสถานะ -->
+  <form method="POST" action="/update_status.php" style="margin-bottom:6px">
+    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+    <!-- รักษาหน้าปัจจุบันหลัง submit -->
+    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+    <select name="status" class="status-select <?= $selectClass ?>" onchange="this.form.submit()">
+      <option value="new"         <?= $s==='new'?'selected':'' ?>>❌ ยังไม่ซ่อม</option>
+      <option value="in_progress" <?= $s==='in_progress'?'selected':'' ?>>🔧 กำลังซ่อม</option>
+      <option value="done"        <?= $s==='done'?'selected':'' ?>>✅ ซ่อมเสร็จ</option>
+    </select>
+  </form>
+
+  <!-- ปุ่มลบรายการ -->
+  <form method="POST" action="/delete_report.php"
+        onsubmit="return confirm('ยืนยันลบคิว <?= h($row['queue_number']) ?> (ID: <?= (int)$row['id'] ?>) ?');">
+    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+    <button type="submit" class="btn-del">🗑️ ลบ</button>
+  </form>
+</td>
               </tr>
             <?php endwhile; ?>
           <?php endif; ?>
