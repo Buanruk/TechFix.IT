@@ -387,7 +387,7 @@ function pageUrl($p){
                 $selectClass = $s==='new' ? 'select-new' : ($s==='in_progress' ? 'select-progress' : 'select-done');
               ?>
               <tr>
-                <td class="tc ellipsis" data-label="คิว"><?= h($row['queue_number']) ?></td>
+                <td class="tc queue-cell" data-label="คิว"><?= h($row['queue_number']) ?></td>
                 <td class="ellipsis" data-label="ชื่อ-สกุล" title="<?= h($row['username']) ?>"><?= h($row['username']) ?></td>
                 <td class="ellipsis" data-label="อุปกรณ์" title="<?= h($row['device_type']) ?>"><?= h($row['device_type']) ?></td>
                 <td class="ellipsis hide-sm" data-label="หมายเลขเครื่อง" title<?= '="'.h($row['serial_number']).'"' ?>><?= h($row['serial_number']) ?></td>

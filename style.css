@@ -229,3 +229,34 @@ img{ max-width:100%; height:auto; }
   display: none;
   z-index: 2000;
 }
+
+/* ===== Desktop column widths — ให้คิวเห็นครบ ลดคอลัมน์อื่น ===== */
+colgroup col.c-queue{width:170px}   /* คิว: กว้างขึ้น (เดิม 100) */
+colgroup col.c-name{width:180px}    /* ชื่อ: ลดลงนิด */
+colgroup col.c-device{width:150px}  /* อุปกรณ์: ลดลง */
+colgroup col.c-serial{width:120px}  /* หมายเลขเครื่อง: ลดลง */
+colgroup col.c-room{width:80px}     /* ห้อง: กระชับ */
+colgroup col.c-issue{width:auto}    /* ปัญหา: กินพื้นที่ที่เหลือ */
+colgroup col.c-phone{width:120px}   /* เบอร์โทร: ลดลง */
+colgroup col.c-time{width:150px}    /* เวลาแจ้ง: ลดลง */
+colgroup col.c-status{width:120px}  /* สถานะ: กระชับ */
+colgroup col.c-action{width:120px}  /* เปลี่ยนสถานะ/ลบ: กระชับ */
+
+/* ลด padding รวมของหัวตาราง/แถว เพื่อให้ข้อมูลจุขึ้น */
+thead th, tbody td{padding:12px 12px}
+
+/* คิว: ไม่ตัดคำ ไม่ ellipsis และใช้ฟอนต์ตัวเลขอ่านง่าย */
+.queue-cell{
+  white-space:nowrap;
+  overflow:visible;
+  text-overflow:clip;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+  font-weight:700;
+  letter-spacing:.2px;
+}
+
+/* ปรับการ์ดบนจอเล็กให้ label แคบลงเล็กน้อย */
+@media (max-width:680px){
+  tbody td::before{ flex:0 0 95px; }
+}
