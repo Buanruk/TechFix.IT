@@ -94,8 +94,8 @@
   <header class="navbar" role="navigation" aria-label="เมนูหลัก">
     <div class="logo"><span class="dot"></span> TechFix.it</div>
     <nav class="nav-actions">
-      <a href="repair_detail.php" class="btn outline" aria-label="รายละเอียดแจ้งซ่อม"><i class="fas fa-clipboard-list"></i>คิวซ่อม</a>
-      <a href="admin_login.php" class="btn" aria-label="เข้าสู่ระบบแอดมิน"><i class="fas fa-user-shield"></i>แอดมิน</a>
+      <a href="repair_detail.php" class="btn outline" aria-label="รายละเอียดแจ้งซ่อม"><i class="fas fa-clipboard-list"></i>คิวแจ้งซ่อม</a>
+      <a href="admin_login.php" class="btn" aria-label="เข้าสู่ระบบแอดมิน"><i class="fas fa-user-shield"></i>ADMIN LOGIN</a>
     </nav>
   </header>
 
