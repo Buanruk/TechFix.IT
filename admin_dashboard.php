@@ -189,7 +189,9 @@ function pageUrl($p){
   colgroup col.c-device{width:180px}
   colgroup col.c-serial{width:160px}
   colgroup col.c-room{width:110px}
-  colgroup col.c-issue{width:auto}
+  colgroup col.c-issue{ width:340px; }           /* desktop กว้าง */
+@media (max-width:1280px){ colgroup col.c-issue{ width:300px; } }
+@media (max-width:1080px){ colgroup col.c-issue{ width:260px; } }
   colgroup col.c-phone{width:160px}
   colgroup col.c-time{width:190px}
   colgroup col.c-status{width:140px}
