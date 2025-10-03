@@ -134,7 +134,7 @@
         <h2 style="margin:0 0 8px;font-size:clamp(22px,3.5vw,34px)"><span style="color:var(--brand)">แจ้งซ่อม</span> ง่ายสุด ๆ</h2>
         <p class="lead">สแกน QR ผ่าน LINE กรอกข้อมูลแจ้งซ่อมเพียงไม่กี่ขั้นตอน <br> ระบบจะรับข้อมูลการแจ้งซ่อมและส่งคิวให้ทันที</p>
         <ul style="margin:12px 0 0;color:var(--muted);line-height:1.9">
-          <li>รองรับอุปกรณ์ IT หรือ อุปกรณ์ไฟฟ้าทุกชนิด</li>
+          <li>รองรับอุปกรณ์ IT ทุกชนิด</li>
           <li>แจ้งเตือนอัตโนมัติในไลน์</li>
           <li>ติดตามสถานะได้ตลอดเวลา</li>
         </ul>
