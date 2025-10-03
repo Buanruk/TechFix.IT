@@ -392,7 +392,11 @@ function pageUrl($p){
                 <td class="ellipsis" data-label="อุปกรณ์" title="<?= h($row['device_type']) ?>"><?= h($row['device_type']) ?></td>
                 <td class="ellipsis hide-sm" data-label="หมายเลขเครื่อง" title<?= '="'.h($row['serial_number']).'"' ?>><?= h($row['serial_number']) ?></td>
                 <td class="tc" data-label="ห้อง"><?= h($room) ?></td>
-                <td class="issue" data-label="ปัญหา"><?= nl2br(h($row['issue_description'])) ?></td>
+                <td class="issue-cell" data-label="ปัญหา">
+  <div class="issue-scroll"
+       title="<?= h($row['issue_description']) ?>"
+       aria-label="รายละเอียดปัญหา — เลื่อนไปทางขวาเพื่ออ่านต่อ">
+    <?= h($row['issue_description']) ?></td>
                 <td class="nowrap hide-sm" data-label="เบอร์โทร"><?= h($row['phone_number']) ?></td>
                 <td class="nowrap" data-label="เวลาแจ้ง" title="<?= h($row['report_date']) ?>">
                   <?= h(@date('d/m/Y H:i', strtotime($row['report_date'])) ?: $row['report_date']) ?>

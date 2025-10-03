@@ -260,3 +260,34 @@ thead th, tbody td{padding:12px 12px}
 @media (max-width:680px){
   tbody td::before{ flex:0 0 95px; }
 }
+
+/* === Issue column ===
+   Desktop: single-line + horizontal scroll inside the cell
+   Mobile:  multi-line, line-clamp เพื่ออ่านง่าย */
+.issue-cell{ /* ใช้กับ <td> */
+  padding:14px 16px;
+  vertical-align:top;
+}
+.issue-scroll{ /* ใช้กับ <div> ข้างใน */
+  max-width:100%;
+  overflow-x:auto;
+  white-space:nowrap;     /* ไม่ตัดบรรทัด -> เลื่อนได้ทางขวา */
+}
+
+/* สไตล์สกอร์ลบาร์ (แนวนอน) ให้เตะตานิดหน่อย */
+.issue-scroll::-webkit-scrollbar{ height:6px; }
+.issue-scroll::-webkit-scrollbar-track{ background:#f1f5ff; border-radius:6px; }
+.issue-scroll::-webkit-scrollbar-thumb{ background:#bdd7ff; border-radius:6px; }
+.issue-scroll{ scrollbar-width:thin; scrollbar-color:#bdd7ff #f1f5ff; }
+
+/* มือถือ: แปลงเป็นหลายบรรทัด อ่านง่าย ไม่ต้องเลื่อนขวา */
+@media (max-width:680px){
+  .issue-scroll{
+    white-space:normal;
+    overflow-x:visible;
+    display:-webkit-box;
+    -webkit-line-clamp:6;           /* โชว์ ~6 บรรทัด */
+    -webkit-box-orient:vertical;
+    line-height:1.6;
+  }
+}
