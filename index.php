@@ -94,8 +94,8 @@
   <header class="navbar" role="navigation" aria-label="เมนูหลัก">
     <div class="logo"><span class="dot"></span> TechFix.it</div>
     <nav class="nav-actions">
-      <a href="repair_detail.php" class="btn outline" aria-label="รายละเอียดแจ้งซ่อม"><i class="fas fa-clipboard-list"></i> รายละเอียดแจ้งซ่อม</a>
-      <a href="admin_login.php" class="btn" aria-label="เข้าสู่ระบบแอดมิน"><i class="fas fa-user-shield"></i> สำหรับแอดมิน</a>
+      <a href="repair_detail.php" class="btn outline" aria-label="รายละเอียดแจ้งซ่อม"><i class="fas fa-clipboard-list"></i>คิวซ่อม</a>
+      <a href="admin_login.php" class="btn" aria-label="เข้าสู่ระบบแอดมิน"><i class="fas fa-user-shield"></i>แอดมิน</a>
     </nav>
   </header>
 
@@ -104,9 +104,9 @@
     <div class="hero-bg"></div>
 
     <!-- Parallax decorative layers (replace with PNG/SVG later) -->
-    <img class="layer" data-parallax data-speed="-0.25" src="image/shape1.png" alt="" style="top:10%;left:-4%;width:28vw;max-width:360px;opacity:.35" />
-    <img class="layer floating" data-parallax data-speed="0.12" src="image/shape2.png" alt="" style="top:18%;right:-6%;width:30vw;max-width:400px;opacity:.28" />
-    <img class="layer" data-parallax data-speed="-0.15" src="image/shape3.png" alt="" style="bottom:-6%;left:8%;width:22vw;max-width:300px;opacity:.22" />
+    <img class="layer" data-parallax data-speed="-0.25" src="image/robot.jpg" alt="" style="top:10%;left:-4%;width:28vw;max-width:360px;opacity:.35" />
+    <img class="layer floating" data-parallax data-speed="0.12" src="image/logo2.png" alt="" style="top:18%;right:-6%;width:30vw;max-width:400px;opacity:.28" />
+    <img class="layer" data-parallax data-speed="-0.15" alt="" style="bottom:-6%;left:8%;width:22vw;max-width:300px;opacity:.22" />
 
     <div class="hero-inner wrap">
       <h1 class="reveal">บริการซ่อมคอมพิวเตอร์ <span>TechFix.it</span></h1>
