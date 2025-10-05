@@ -294,4 +294,48 @@ thead th, tbody td{padding:12px 12px}
   }
 }
 
+/* ====== Buttons (ใช้ร่วมหน้าแรก/เมนูบน) ====== */
+a { color: inherit; text-decoration: none; }
+a:hover { text-decoration: none; }
+
+/* ปุ่มฐาน */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:10px;
+  padding:12px 16px; border-radius:14px; font-weight:700;
+  background: linear-gradient(180deg,#4F9DFF,#3C86E7); color:#E6EDF7;
+  box-shadow:0 8px 18px rgba(79,157,255,.35);
+  border:1px solid rgba(255,255,255,.10);
+  transition:transform .2s ease, box-shadow .2s ease, filter .2s ease;
+}
+.btn i{ font-size:1rem; }
+.btn:hover{ transform:translateY(-2px); box-shadow:0 12px 22px rgba(79,157,255,.45); }
+.btn:active{ transform:scale(.98); }
+
+/* สไตล์โปร่งใส */
+.btn.outline{ background:transparent; border:1px solid rgba(230,237,247,.18); box-shadow:none; }
+.btn.ghost{ background:rgba(79,157,255,.12); border:1px solid rgba(79,157,255,.35); color:#CFE4FF; }
+.btn.ghost:hover{ background:rgba(79,157,255,.18); }
+
+/* ปุ่ม Administrator บนเมนูบน */
+.btn-admin{
+  padding:10px 16px; border-radius:999px;
+  background: linear-gradient(180deg,#5EA4FF,#3D86E7);
+  border:1px solid rgba(255,255,255,.14);
+}
+.navbar .nav-actions{ display:flex; gap:10px; }
+.navbar .btn-admin:hover{ filter:brightness(1.06); }
+
+/* ให้ปุ่มใน hero วางข้างกันและสวยบนจอเล็ก */
+.hero-buttons .btn{ min-width:180px; }
+@media (max-width:680px){
+  .hero-buttons .btn{ flex:1 1 46%; min-width:140px; padding:12px 14px; }
+}
+@media (max-width:400px){
+  .hero-buttons .btn{ flex-basis:100%; }
+}
+
+
+
+
+
 
