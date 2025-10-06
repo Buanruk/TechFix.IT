@@ -298,3 +298,18 @@ a:hover { text-decoration: none; }
 @media (max-width:400px){
   .hero-buttons .btn{ flex-basis:100%; }
 }
+ 
+/* === Assign Technician dropdown (หน้าตาเหมือนเปลี่ยนสถานะ) === */
+.tech-select{
+  padding:6px 10px; border:1px solid #e6effa; border-radius:10px;
+  background:#fff; font-weight:800; min-width:160px; cursor:pointer;
+  box-shadow:0 1px 0 rgba(255,255,255,.6), 0 8px 18px rgba(10,37,64,.06);
+}
+.tech-select:focus{ border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.15) }
+.tech-tong{ color:#0b63c8 } .tech-chai{ color:#2e7d32 } .tech-bew{ color:#c62828 }
+
+.assigned-badge{
+  display:inline-flex; align-items:center; gap:6px; margin-top:6px;
+  padding:4px 8px; border-radius:999px; font-size:12.5px;
+  background:#eef5ff; color:#0b63c8; border:1px solid #d6eaff;
+}
