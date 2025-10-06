@@ -22,12 +22,6 @@ $regexMap = [
   'tv'      => '(tv|ทีวี|monitor|จอภาพ)',
 ];
 
-$TECHS = [
-  'tong' => ['name' => 'ช่างโต้ง', 'phone' => '081-111-1111'],
-  'chai' => ['name' => 'ช่างชาย', 'phone' => '082-222-2222'],
-  'bew'  => ['name' => 'ช่างบิว',  'phone' => '083-333-3333'],
-];
-
 function findTechSlug($assignedName, $TECHS){
   foreach ($TECHS as $slug => $t) {
     if ($assignedName && mb_strpos($assignedName, $t['name']) !== false) return $slug;
