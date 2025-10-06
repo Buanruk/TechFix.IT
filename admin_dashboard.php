@@ -38,7 +38,7 @@ $offset  = ($page - 1) * $perPage;
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 function statusText($s){
   return match($s){
-    'new'         => 'ยังไม่ซ่อม',
+    'new'         => 'แจ้งซ่อม',
     'in_progress' => 'กำลังซ่อม',
     'done'        => 'ซ่อมเสร็จ',
     default       => 'ไม่ทราบ',
@@ -461,6 +461,44 @@ $result = $stmt->get_result();
               </tr>
             <?php endwhile; ?>
           <?php endif; ?>
+
+          <!-- มอบหมายช่าง -->
+<div class="assign-wrap" aria-label="มอบหมายงานให้ช่าง">
+  <form method="POST" action="/assign_work.php" onsubmit="return confirm('ยืนยันมอบหมายงานนี้ให้ช่างโต้ง ?')">
+    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+    <input type="hidden" name="tech" value="tong">
+    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+    <button type="submit" class="assign-btn tong">โต้ง</button>
+  </form>
+  <form method="POST" action="/assign_work.php" onsubmit="return confirm('ยืนยันมอบหมายงานนี้ให้ช่างชาย ?')">
+    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+    <input type="hidden" name="tech" value="chai">
+    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+    <button type="submit" class="assign-btn chai">ชาย</button>
+  </form>
+  <form method="POST" action="/assign_work.php" onsubmit="return confirm('ยืนยันมอบหมายงานนี้ให้ช่างบิว ?')">
+    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+    <input type="hidden" name="tech" value="bew">
+    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+    <button type="submit" class="assign-btn bew">บิว</button>
+  </form>
+</div>
+
+<?php
+  // ถ้ามีข้อมูลช่างที่รับงานแล้ว โชว์ใต้ปุ่มให้ผู้ใช้เห็น
+  if (!empty($row['assigned_tech'])) {
+    $showTel = !empty($row['assigned_tech_phone']) ? ' • '.$row['assigned_tech_phone'] : '';
+    echo '<div class="assigned-badge">ช่าง: '.h($row['assigned_tech']).$showTel.'</div>';
+  }
+?>
+<td class="tc" data-label="สถานะ">
+  <span class="badge <?= $s ?>"><?= statusIcon($s) ?> <?= h(statusText($s)) ?></span>
+  <?php if (!empty($row['assigned_tech'])): ?>
+    <div class="assigned-badge">ช่าง: <?= h($row['assigned_tech']) ?></div>
+  <?php endif; ?>
+</td>
+
+
           </tbody>
         </table>
       </div>
