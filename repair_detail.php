@@ -263,7 +263,7 @@ function page_url($p, $status, $dtype){
         <label class="label" for="status">กรองสถานะ:</label>
         <select class="select" id="status" name="status" onchange="this.form.page.value=1; this.form.submit()">
           <option value="all"         <?= $filterStatus==='all' ? 'selected' : '' ?>>ทั้งหมด</option>
-          <option value="new"         <?= $filterStatus==='new' ? 'selected' : '' ?>>❌ ยังไม่ซ่อม</option>
+          <option value="new"         <?= $filterStatus==='new' ? 'selected' : '' ?>>❌ แจ้งซ่อม</option>
           <option value="in_progress" <?= $filterStatus==='in_progress' ? 'selected' : '' ?>>🔧 กำลังซ่อม</option>
           <option value="done"        <?= $filterStatus==='done' ? 'selected' : '' ?>>✅ ซ่อมเสร็จ</option>
         </select>
