@@ -22,6 +22,19 @@ $regexMap = [
   'tv'      => '(tv|ทีวี|monitor|จอภาพ)',
 ];
 
+$TECHS = [
+  'tong' => ['name' => 'ช่างโต้ง', 'phone' => '081-111-1111'],
+  'chai' => ['name' => 'ช่างชาย', 'phone' => '082-222-2222'],
+  'bew'  => ['name' => 'ช่างบิว',  'phone' => '083-333-3333'],
+];
+
+function findTechSlug($assignedName, $TECHS){
+  foreach ($TECHS as $slug => $t) {
+    if ($assignedName && mb_strpos($assignedName, $t['name']) !== false) return $slug;
+  }
+  return '';
+}
+
 // ===== รับค่า “สถานะ” และ “ประเภทอุปกรณ์” =====
 $filterStatus = $_GET['status'] ?? 'all';
 if (!in_array($filterStatus, ['all','new','in_progress','done'], true)) $filterStatus = 'all';
@@ -456,6 +469,39 @@ $result = $stmt->get_result();
                     <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                     <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
                     <button type="submit" class="btn-del">🗑️ ลบ</button>
+
+<?php
+  // ค่าเดิม ๆ ของแถว
+  $assignedName  = (string)($row['assigned_tech'] ?? '');
+  $assignedPhone = (string)($row['assigned_tech_phone'] ?? '');
+  $assignedSlug  = findTechSlug($assignedName, $TECHS); // tong/chai/bew หรือว่าง
+  $disabledTech  = ($s === 'done') ? 'disabled' : '';   // ถ้าซ่อมเสร็จแล้ว ก็ไม่ให้มอบหมาย
+?>
+
+<!-- === เลือกช่าง (ปุ่มเหมือนเปลี่ยนสถานะ) === -->
+<form method="POST" action="/assign_work.php" style="margin-top:6px">
+  <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+  <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+
+  <select name="tech"
+          class="tech-select status-select <?= $assignedSlug ? 'tech-'.$assignedSlug : '' ?>"
+          onchange="this.form.submit()"
+          title="มอบหมายช่าง"
+          <?= $disabledTech ?>>
+    <option value="" <?= $assignedSlug===''?'selected':'' ?>>👷 เลือกช่าง…</option>
+    <option value="tong" <?= $assignedSlug==='tong'?'selected':'' ?>>🧑‍🔧 ช่างโต้ง</option>
+    <option value="chai" <?= $assignedSlug==='chai'?'selected':'' ?>>🧑‍🔧 ช่างชาย</option>
+    <option value="bew"  <?= $assignedSlug==='bew'?'selected':''  ?>>🧑‍🔧 ช่างบิว</option>
+  </select>
+</form>
+
+<?php if ($assignedName): ?>
+  <div class="assigned-badge">
+    ช่าง: <?= h($assignedName) ?><?= $assignedPhone ? ' • '.h($assignedPhone) : '' ?>
+  </div>
+<?php endif; ?>
+
+
                   </form>
                 </td>
               </tr>

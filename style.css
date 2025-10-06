@@ -8,7 +8,6 @@
 }
 
 *{ box-sizing:border-box; }
-
 html{ -webkit-text-size-adjust:100%; }
 
 body{
@@ -135,20 +134,12 @@ img{ max-width:100%; height:auto; }
 @media (max-width:768px){
   .navbar{ padding:16px 6%; }
   .hero{ flex-direction:column; padding:48px 6%; }
-
   .hero-text h1{ font-size:clamp(1.9rem,7.2vw,2.6rem); }
-
   .hero-text p{
-    font-size:0.95rem;
-    line-height:1.7;
-    max-width:22rem;
-    margin-left:auto; margin-right:auto;
-    text-align:left;
+    font-size:0.95rem; line-height:1.7; max-width:22rem;
+    margin-left:auto; margin-right:auto; text-align:left;
   }
-
-  /* ปุ่มอยู่กึ่งกลางบนมือถือ */
   .hero-buttons{ justify-content:center; }
-
   .hero-qr-box{ margin-top:28px; max-width:260px; padding:20px; }
   .hero-qr-box img{ width:160px; }
 }
@@ -157,10 +148,7 @@ img{ max-width:100%; height:auto; }
   .hero{ padding:32px 5%; }
   .hero-text h1{ font-size:clamp(1.8rem,8vw,2.2rem); }
   .hero-text p{ font-size:0.94rem; max-width:20rem; line-height:1.65; }
-
-  /* ปุ่มยังคงกึ่งกลางบนจอเล็กมาก */
   .hero-buttons{ justify-content:center; }
-
   .hero-qr-box{ max-width:235px; }
   .hero-qr-box img{ width:150px; }
 }
@@ -216,63 +204,42 @@ img{ max-width:100%; height:auto; }
 
 /* แจ้งเตือนมีอัปเดตใหม่ */
 .live-notice{
-  position: fixed;
-  left: 50%;
-  bottom: 20px;
-  transform: translateX(-50%);
-  background: #0b63c8;
-  color: #fff;
-  padding: 10px 14px;
-  border-radius: 12px;
-  box-shadow: 0 10px 24px rgba(15,40,80,.25);
-  font-weight: 800;
-  display: none;
-  z-index: 2000;
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  background: #0b63c8; color: #fff; padding: 10px 14px; border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(15,40,80,.25); font-weight: 800; display: none; z-index: 2000;
 }
 
 /* ===== Desktop column widths — ให้คิวเห็นครบ ลดคอลัมน์อื่น ===== */
-colgroup col.c-queue{width:170px}   /* คิว: กว้างขึ้น (เดิม 100) */
-colgroup col.c-name{width:180px}    /* ชื่อ: ลดลงนิด */
-colgroup col.c-device{width:150px}  /* อุปกรณ์: ลดลง */
-colgroup col.c-serial{width:120px}  /* หมายเลขเครื่อง: ลดลง */
-colgroup col.c-room{width:80px}     /* ห้อง: กระชับ */
-colgroup col.c-issue{width:auto}    /* ปัญหา: กินพื้นที่ที่เหลือ */
-colgroup col.c-phone{width:120px}   /* เบอร์โทร: ลดลง */
-colgroup col.c-time{width:150px}    /* เวลาแจ้ง: ลดลง */
-colgroup col.c-status{width:120px}  /* สถานะ: กระชับ */
-colgroup col.c-action{width:120px}  /* เปลี่ยนสถานะ/ลบ: กระชับ */
+colgroup col.c-queue{width:170px}
+colgroup col.c-name{width:180px}
+colgroup col.c-device{width:150px}
+colgroup col.c-serial{width:120px}
+colgroup col.c-room{width:80px}
+colgroup col.c-issue{width:auto}
+colgroup col.c-phone{width:120px}
+colgroup col.c-time{width:150px}
+colgroup col.c-status{width:120px}
+colgroup col.c-action{width:120px}
 
 /* ลด padding รวมของหัวตาราง/แถว เพื่อให้ข้อมูลจุขึ้น */
 thead th, tbody td{padding:12px 12px}
 
 /* คิว: ไม่ตัดคำ ไม่ ellipsis และใช้ฟอนต์ตัวเลขอ่านง่าย */
 .queue-cell{
-  white-space:nowrap;
-  overflow:visible;
-  text-overflow:clip;
+  white-space:nowrap; overflow:visible; text-overflow:clip;
   font-variant-numeric: tabular-nums;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-  font-weight:700;
-  letter-spacing:.2px;
+  font-weight:700; letter-spacing:.2px;
 }
 
 /* ปรับการ์ดบนจอเล็กให้ label แคบลงเล็กน้อย */
-@media (max-width:680px){
-  tbody td::before{ flex:0 0 95px; }
-}
+@media (max-width:680px){ tbody td::before{ flex:0 0 95px; } }
 
-/* ช่องปัญหา
-   Desktop: แถวเดียว + เลื่อนขวาในช่อง
-   Mobile : หลายบรรทัดอ่านง่าย */
+/* ช่องปัญหา */
 .issue-cell{ padding:14px 16px; vertical-align:top; }
-
 .issue-scroll{
-  display:block;
-  max-width:100%;
-  overflow-x:auto;       /* สกอร์ลล์เฉพาะช่องนี้ */
-  white-space:nowrap;    /* ไม่ตัดบรรทัด -> ไม่ดันคอลัมน์ข้างๆ */
+  display:block; max-width:100%; overflow-x:auto; white-space:nowrap;
 }
-
 /* แต่งแถบเลื่อนแนวนอนเล็กน้อย */
 .issue-scroll::-webkit-scrollbar{ height:6px; }
 .issue-scroll::-webkit-scrollbar-track{ background:#f1f5ff; border-radius:6px; }
@@ -285,12 +252,8 @@ thead th, tbody td{padding:12px 12px}
 /* มือถือ: แสดงเป็นหลายบรรทัด ไม่ต้องเลื่อนขวา */
 @media (max-width:680px){
   .issue-scroll{
-    white-space:normal;
-    overflow-x:visible;
-    display:-webkit-box;
-    -webkit-line-clamp:6;         /* แสดง ~6 บรรทัด */
-    -webkit-box-orient:vertical;
-    line-height:1.6;
+    white-space:normal; overflow-x:visible;
+    display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; line-height:1.6;
   }
 }
 
@@ -334,6 +297,7 @@ a:hover { text-decoration: none; }
   .hero-buttons .btn{ flex-basis:100%; }
 }
 
+/* ปุ่มมอบหมายช่าง (ถ้าใช้ปุ่ม 3 คนแบบเดิม) */
 .assign-wrap{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:6px }
 .assign-btn{
   display:inline-flex; align-items:center; justify-content:center;
@@ -351,7 +315,10 @@ a:hover { text-decoration: none; }
   background:#eef5ff; color:#0b63c8; border:1px solid #d6eaff;
 }
 
-
-
-
-
+/* ปุ่มเลือกช่างแบบ dropdown ให้หน้าตาเหมือนเปลี่ยนสถานะ */
+.tech-select{
+  padding:6px 10px; border:1px solid var(--line,#e6effa); border-radius:10px;
+  background:#fff; font-weight:800; cursor:pointer; min-width:150px;
+}
+.tech-select:focus{ border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.15) }
+.tech-tong{ color:#0b63c8 } .tech-chai{ color:#2e7d32 } .tech-bew{ color:#c62828 }
