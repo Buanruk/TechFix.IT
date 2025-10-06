@@ -4,22 +4,69 @@ $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
 if ($conn->connect_error) { die("DB Error"); }
 $conn->set_charset("utf8");
 
-/* === โหมดตอบ JSON สำหรับรีเฟรชสถานะ (AJAX) === */
+/* ====== Device filter map (slug -> display, regex) ====== */
+$dtypes = [
+  'all'     => 'ทั้งหมด',
+  'pc'      => 'ปัญหาเกี่ยวกับคอมพิวเตอร์',
+  'printer' => 'ปัญหาเกี่ยวกับปริ้นเตอร์',
+  'laptop'  => 'ปัญหาเกี่ยวกับโน๊ตบุ๊ค',
+  'network' => 'ปัญหาเกี่ยวกับเครือข่าย',
+  'tv'      => 'ปัญหาเกี่ยวกับ TV',
+];
+// ใช้ LOWER(device_type) REGEXP ? ให้รองรับหลายคำ (ไทย/อังกฤษ)
+$regexMap = [
+  'pc'      => '(คอม|computer|pc|desktop)',
+  'printer' => '(ปริ้น|พรินท์|printer|พิมพ์)',
+  'laptop'  => '(โน๊ตบุ๊ค|โน้ตบุ๊ก|laptop|notebook)',
+  'network' => '(เครือข่าย|network|lan|wifi|router|switch)',
+  'tv'      => '(tv|ทีวี|monitor|จอภาพ)',
+];
+
+/* ===== Helper ===== */
+function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
+function build_where_and_params($status, $dtype, $regexMap){
+  $wheres = [];
+  $types  = '';
+  $vals   = [];
+
+  // กรองสถานะ
+  if ($status !== 'all'){
+    $wheres[] = "status = ?";
+    $types   .= "s";
+    $vals[]   = $status;
+  }
+  // กรองประเภทอุปกรณ์ (ด้วย REGEXP แบบยืดหยุ่น)
+  if ($dtype !== 'all' && isset($regexMap[$dtype])) {
+    $wheres[] = "LOWER(device_type) REGEXP ?";
+    $types   .= "s";
+    $vals[]   = strtolower($regexMap[$dtype]);
+  }
+
+  $whereSQL = $wheres ? ("WHERE ".implode(" AND ", $wheres)) : "";
+  return [$whereSQL, $types, $vals];
+}
+
+/* ===== รับตัวกรอง ===== */
+$filterStatusAllowed = ['new','in_progress','done'];
+$filterStatus = $_GET['status'] ?? 'all';
+if (!in_array($filterStatus, $filterStatusAllowed, true)) $filterStatus = 'all';
+
+$filterDtypeAllowed = array_keys($dtypes);
+$filterDtype = $_GET['dtype'] ?? 'all';
+if (!in_array($filterDtype, $filterDtypeAllowed, true)) $filterDtype = 'all';
+
+/* === โหมดตอบ JSON สำหรับรีเฟรชสถานะ (AJAX) ===
+   จะเคารพตัวกรอง status + dtype ตามพารามิเตอร์ใน URL ปัจจุบัน
+*/
 if (isset($_GET['poll']) && $_GET['poll'] === 'status') {
   header('Content-Type: application/json; charset=utf-8');
-  // ไม่ต้อง require อีก เพราะเราเชื่อมต่อไว้แล้ว
   if (!isset($conn) || $conn->connect_error) { echo json_encode([]); exit; }
 
-  $filter  = $_GET['status'] ?? 'all';
-  $allowed = ['new','in_progress','done'];
-  if (!in_array($filter, $allowed, true)) $filter = 'all';
+  [$whereSQL, $types, $vals] = build_where_and_params($filterStatus, $filterDtype, $regexMap);
 
-  if ($filter === 'all') {
-    $stmt = $conn->prepare("SELECT id, status FROM device_reports ORDER BY id DESC");
-  } else {
-    $stmt = $conn->prepare("SELECT id, status FROM device_reports WHERE status = ? ORDER BY id DESC");
-    $stmt->bind_param("s", $filter);
-  }
+  $sql = "SELECT id, status FROM device_reports $whereSQL ORDER BY id DESC";
+  $stmt = $conn->prepare($sql);
+  if ($types) { $stmt->bind_param($types, ...$vals); }
   $stmt->execute();
   $res = $stmt->get_result();
 
@@ -34,25 +81,16 @@ if (isset($_GET['poll']) && $_GET['poll'] === 'status') {
   exit;
 }
 
-/* ===== Helper ===== */
-function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
-
-/* ===== รับตัวกรอง + ตั้งค่าการแบ่งหน้า ===== */
-$filter   = $_GET['status'] ?? 'all';
-$allowed  = ['new','in_progress','done'];
-if (!in_array($filter, $allowed, true)) $filter = 'all';
-
+/* ===== ตั้งค่าการแบ่งหน้า ===== */
 $perPage  = 10;
 $page     = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $offset   = ($page - 1) * $perPage;
 
-/* ===== นับจำนวนรายการทั้งหมด (ตามตัวกรอง) ===== */
-if ($filter === 'all') {
-  $countStmt = $conn->prepare("SELECT COUNT(*) AS total FROM device_reports");
-} else {
-  $countStmt = $conn->prepare("SELECT COUNT(*) AS total FROM device_reports WHERE status = ?");
-  $countStmt->bind_param("s", $filter);
-}
+/* ===== นับจำนวนทั้งหมด (ตามตัวกรอง status+dtype) ===== */
+[$whereSQLCnt, $typesCnt, $valsCnt] = build_where_and_params($filterStatus, $filterDtype, $regexMap);
+$countSql = "SELECT COUNT(*) AS total FROM device_reports $whereSQLCnt";
+$countStmt = $conn->prepare($countSql);
+if ($typesCnt) { $countStmt->bind_param($typesCnt, ...$valsCnt); }
 $countStmt->execute();
 $countRes   = $countStmt->get_result();
 $totalRows  = (int)($countRes->fetch_assoc()['total'] ?? 0);
@@ -67,13 +105,15 @@ $baseSelect = "
          serial_number AS device_no, status
   FROM device_reports
 ";
-if ($filter === 'all') {
-  $stmt = $conn->prepare("$baseSelect ORDER BY id DESC LIMIT ? OFFSET ?");
-  $stmt->bind_param("ii", $perPage, $offset);
-} else {
-  $stmt = $conn->prepare("$baseSelect WHERE status = ? ORDER BY id DESC LIMIT ? OFFSET ?");
-  $stmt->bind_param("sii", $filter, $perPage, $offset);
-}
+[$whereSQL, $types, $vals] = build_where_and_params($filterStatus, $filterDtype, $regexMap);
+$sql = "$baseSelect $whereSQL ORDER BY id DESC LIMIT ? OFFSET ?";
+$typesSel = $types . "ii";
+$valsSel  = $vals;
+$valsSel[] = $perPage;
+$valsSel[] = $offset;
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param($typesSel, ...$valsSel);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -83,8 +123,8 @@ $status_map = [
   'done'        => ['label'=>'ซ่อมเสร็จแล้ว','color'=>'green'],
 ];
 
-function page_url($p, $status){
-  return '?status='.urlencode($status).'&page='.(int)max(1,$p);
+function page_url($p, $status, $dtype){
+  return '?status='.urlencode($status).'&dtype='.urlencode($dtype).'&page='.(int)max(1,$p);
 }
 ?>
 <!DOCTYPE html>
@@ -129,7 +169,14 @@ function page_url($p, $status){
     .red{ background:#f44336 } .blue{ background:#2196f3 } .green{ background:#4caf50 } .gray{ background:#9e9e9e }
     .status-label{ font-weight:700 } .txt-red{color:#f44336}.txt-blue{color:#2196f3}.txt-green{color:#4caf50}.txt-gray{color:#9e9e9e}
 
-    .toolbar{display:flex;gap:12px;justify-content:center;align-items:center;padding:12px 18px;flex-wrap:wrap}
+    /* === Toolbar: ซ้าย (ประเภทอุปกรณ์) | ขวา (สถานะ) === */
+    .toolbar{
+      display:flex;justify-content:space-between;align-items:center;
+      gap:16px;padding:12px 18px;flex-wrap:wrap
+    }
+    .toolbar .group{
+      display:flex;align-items:center;gap:10px;flex-wrap:wrap
+    }
     .toolbar .label{font-weight:800;color:#0a2540}
     .toolbar .select{
       appearance:none;height:42px;line-height:42px;padding:0 42px 0 14px;min-width:240px;
@@ -149,11 +196,20 @@ function page_url($p, $status){
     .pager .active{background:#e8f2ff;border-color:#b9dcff;color:#0b63c8}
     .pager .disabled{opacity:.45;pointer-events:none}
 
+    @media (max-width:860px){
+      .toolbar{justify-content:center}
+    }
     @media (max-width:640px){
       :root{ --header-h:56px }
       .back-left{ left:12px; top: calc(var(--header-h) + 10px) }
       .navbar{ padding:0 14px } .brand-sub{ display:none }
       th{ font-size:15px } td{ font-size:14px }
+
+      /* ฟอร์มกรองซ้อนเป็นสองแถวบนจอเล็ก */
+      .toolbar{flex-direction:column;align-items:stretch}
+      .toolbar .group{width:100%;justify-content:space-between}
+      .toolbar .select{min-width:unset;flex:1}
+
       /* ทำให้ตารางอ่านง่ายบนจอเล็กมาก */
       thead{ display:none }
       table{ border-collapse:separate }
@@ -192,16 +248,28 @@ function page_url($p, $status){
   <section class="card">
     <div class="card-header">รายการแจ้งซ่อม</div>
 
-    <!-- Filter -->
+    <!-- Filters: ซ้าย = ประเภทอุปกรณ์, ขวา = สถานะ -->
     <form class="toolbar" method="get">
-      <label class="label" for="status">กรองสถานะ:</label>
-      <select class="select" id="status" name="status" onchange="this.form.submit()">
-        <option value="all"         <?= $filter==='all' ? 'selected' : '' ?>>ทั้งหมด</option>
-        <option value="new"         <?= $filter==='new' ? 'selected' : '' ?>>❌ ยังไม่ซ่อม</option>
-        <option value="in_progress" <?= $filter==='in_progress' ? 'selected' : '' ?>>🔧 กำลังซ่อม</option>
-        <option value="done"        <?= $filter==='done' ? 'selected' : '' ?>>✅ ซ่อมเสร็จ</option>
-      </select>
-      <input type="hidden" name="page" value="1"><!-- เวลาเปลี่ยนตัวกรอง ให้กลับไปหน้า 1 -->
+      <div class="group">
+        <label class="label" for="dtype">กรองอุปกรณ์:</label>
+        <select class="select" id="dtype" name="dtype" onchange="this.form.page.value=1; this.form.submit()">
+          <?php foreach ($dtypes as $slug=>$label): ?>
+            <option value="<?= h($slug) ?>" <?= $filterDtype===$slug ? 'selected':'' ?>><?= h($label) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+
+      <div class="group">
+        <label class="label" for="status">กรองสถานะ:</label>
+        <select class="select" id="status" name="status" onchange="this.form.page.value=1; this.form.submit()">
+          <option value="all"         <?= $filterStatus==='all' ? 'selected' : '' ?>>ทั้งหมด</option>
+          <option value="new"         <?= $filterStatus==='new' ? 'selected' : '' ?>>❌ ยังไม่ซ่อม</option>
+          <option value="in_progress" <?= $filterStatus==='in_progress' ? 'selected' : '' ?>>🔧 กำลังซ่อม</option>
+          <option value="done"        <?= $filterStatus==='done' ? 'selected' : '' ?>>✅ ซ่อมเสร็จ</option>
+        </select>
+      </div>
+
+      <input type="hidden" name="page" value="<?= (int)$page ?>"><!-- เปลี่ยนตัวกรองให้กลับหน้า 1 -->
     </form>
 
     <!-- Table -->
@@ -246,7 +314,7 @@ function page_url($p, $status){
         $prev = $page - 1;
         $next = $page + 1;
       ?>
-      <a class="<?= $page<=1 ? 'disabled':'' ?>" href="<?= $page<=1 ? '#' : h(page_url($prev, $filter)) ?>" aria-label="ก่อนหน้า">«</a>
+      <a class="<?= $page<=1 ? 'disabled':'' ?>" href="<?= $page<=1 ? '#' : h(page_url($prev, $filterStatus, $filterDtype)) ?>" aria-label="ก่อนหน้า">«</a>
 
       <?php
         $window = 2; // จำนวนหน้าก่อน/หลัง
@@ -254,20 +322,20 @@ function page_url($p, $status){
         $end   = min($totalPages, $page + $window);
 
         if ($start > 1){
-          echo '<a href="'.h(page_url(1,$filter)).'">1</a>';
+          echo '<a href="'.h(page_url(1,$filterStatus,$filterDtype)).'">1</a>';
           if ($start > 2) echo '<span class="disabled">…</span>';
         }
         for($p=$start; $p<=$end; $p++){
           if ($p == $page) echo '<span class="active">'.$p.'</span>';
-          else echo '<a href="'.h(page_url($p,$filter)).'">'.$p.'</a>';
+          else echo '<a href="'.h(page_url($p,$filterStatus,$filterDtype)).'">'.$p.'</a>';
         }
         if ($end < $totalPages){
           if ($end < $totalPages-1) echo '<span class="disabled">…</span>';
-          echo '<a href="'.h(page_url($totalPages,$filter)).'">'.$totalPages.'</a>';
+          echo '<a href="'.h(page_url($totalPages,$filterStatus,$filterDtype)).'">'.$totalPages.'</a>';
         }
       ?>
 
-      <a class="<?= $page>=$totalPages ? 'disabled':'' ?>" href="<?= $page>=$totalPages ? '#' : h(page_url($next, $filter)) ?>" aria-label="ถัดไป">»</a>
+      <a class="<?= $page>=$totalPages ? 'disabled':'' ?>" href="<?= $page>=$totalPages ? '#' : h(page_url($next, $filterStatus, $filterDtype)) ?>" aria-label="ถัดไป">»</a>
       <span class="disabled" style="border:none">หน้า <?= $page ?> / <?= $totalPages ?> • ทั้งหมด <?= number_format($totalRows) ?> รายการ</span>
     </nav>
 
@@ -299,7 +367,7 @@ $conn->close();
   async function refreshTickets(){
     try{
       const url = new URL(window.location.href);
-      url.searchParams.set('poll', 'status'); // ขอเฉพาะ id/status
+      url.searchParams.set('poll', 'status'); // ขอเฉพาะ id/status (ยังคงพารามิเตอร์ dtype/status/page ปัจจุบัน)
       const res = await fetch(url.toString(), { cache: "no-store" });
       if (!res.ok) return;
 
@@ -323,8 +391,5 @@ $conn->close();
   refreshTickets();
   setInterval(refreshTickets, 8000); // ทุก 8 วิ
 </script>
-
-
-
 </body>
 </html>
