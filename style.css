@@ -296,29 +296,3 @@ a:hover { text-decoration: none; }
 @media (max-width:400px){
   .hero-buttons .btn{ flex-basis:100%; }
 }
-
-/* ปุ่มมอบหมายช่าง (ถ้าใช้ปุ่ม 3 คนแบบเดิม) */
-.assign-wrap{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:6px }
-.assign-btn{
-  display:inline-flex; align-items:center; justify-content:center;
-  height:34px; padding:0 10px; border-radius:10px; border:1px solid #e0e6ef;
-  background:#fff; font-weight:800; cursor:pointer;
-  transition:transform .06s ease, box-shadow .18s ease, border-color .18s ease;
-}
-.assign-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 18px rgba(10,37,64,.12); border-color:#cfe2ff }
-.assign-btn.tong{ color:#0b63c8 }
-.assign-btn.chai{ color:#2e7d32 }
-.assign-btn.bew { color:#c62828 }
-.assigned-badge{
-  display:inline-flex; align-items:center; gap:6px; margin-top:6px;
-  padding:4px 8px; border-radius:999px; font-size:12.5px;
-  background:#eef5ff; color:#0b63c8; border:1px solid #d6eaff;
-}
-
-/* ปุ่มเลือกช่างแบบ dropdown ให้หน้าตาเหมือนเปลี่ยนสถานะ */
-.tech-select{
-  padding:6px 10px; border:1px solid var(--line,#e6effa); border-radius:10px;
-  background:#fff; font-weight:800; cursor:pointer; min-width:150px;
-}
-.tech-select:focus{ border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.15) }
-.tech-tong{ color:#0b63c8 } .tech-chai{ color:#2e7d32 } .tech-bew{ color:#c62828 }
