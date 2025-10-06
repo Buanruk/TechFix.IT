@@ -373,7 +373,7 @@ $result = $stmt->get_result();
       <!-- KPI (รวมทั้งหมด) -->
       <div class="kpis">
         <div class="kpi total"><h4>ทั้งหมด</h4><div class="num"><?= (int)$stat['all'] ?></div></div>
-        <div class="kpi new"><h4>ยังไม่ซ่อม</h4><div class="num"><?= (int)$stat['new'] ?></div></div>
+        <div class="kpi new"><h4>แจ้งซ่อม</h4><div class="num"><?= (int)$stat['new'] ?></div></div>
         <div class="kpi progress"><h4>กำลังซ่อม</h4><div class="num"><?= (int)$stat['in_progress'] ?></div></div>
         <div class="kpi done"><h4>ซ่อมเสร็จ</h4><div class="num"><?= (int)$stat['done'] ?></div></div>
       </div>
@@ -392,7 +392,7 @@ $result = $stmt->get_result();
           <label class="label" for="status">กรองสถานะ:</label>
           <select class="select" id="status" name="status" onchange="this.form.page.value=1; this.form.submit()">
             <option value="all"         <?= $filterStatus==='all' ? 'selected' : '' ?>>ทั้งหมด</option>
-            <option value="new"         <?= $filterStatus==='new' ? 'selected' : '' ?>>❌ ยังไม่ซ่อม</option>
+            <option value="new"         <?= $filterStatus==='new' ? 'selected' : '' ?>>❌ แจ้งซ่อม</option>
             <option value="in_progress" <?= $filterStatus==='in_progress' ? 'selected' : '' ?>>🔧 กำลังซ่อม</option>
             <option value="done"        <?= $filterStatus==='done' ? 'selected' : '' ?>>✅ ซ่อมเสร็จ</option>
           </select>
@@ -458,7 +458,7 @@ $result = $stmt->get_result();
                     <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                     <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
                     <select name="status" class="status-select <?= $selectClass ?>" onchange="this.form.submit()">
-                      <option value="new"         <?= $s==='new'?'selected':'' ?>>❌ ยังไม่ซ่อม</option>
+                      <option value="new"         <?= $s==='new'?'selected':'' ?>>❌ แจ้งซ่อม</option>
                       <option value="in_progress" <?= $s==='in_progress'?'selected':'' ?>>🔧 กำลังซ่อม</option>
                       <option value="done"        <?= $s==='done'?'selected':'' ?>>✅ ซ่อมเสร็จ</option>
                     </select>
@@ -474,44 +474,6 @@ $result = $stmt->get_result();
               </tr>
             <?php endwhile; ?>
           <?php endif; ?>
-
-          <!-- มอบหมายช่าง -->
-<div class="assign-wrap" aria-label="มอบหมายงานให้ช่าง">
-  <form method="POST" action="/assign_work.php" onsubmit="return confirm('ยืนยันมอบหมายงานนี้ให้ช่างโต้ง ?')">
-    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-    <input type="hidden" name="tech" value="tong">
-    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
-    <button type="submit" class="assign-btn tong">โต้ง</button>
-  </form>
-  <form method="POST" action="/assign_work.php" onsubmit="return confirm('ยืนยันมอบหมายงานนี้ให้ช่างชาย ?')">
-    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-    <input type="hidden" name="tech" value="chai">
-    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
-    <button type="submit" class="assign-btn chai">ชาย</button>
-  </form>
-  <form method="POST" action="/assign_work.php" onsubmit="return confirm('ยืนยันมอบหมายงานนี้ให้ช่างบิว ?')">
-    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-    <input type="hidden" name="tech" value="bew">
-    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
-    <button type="submit" class="assign-btn bew">บิว</button>
-  </form>
-</div>
-
-<?php
-  // ถ้ามีข้อมูลช่างที่รับงานแล้ว โชว์ใต้ปุ่มให้ผู้ใช้เห็น
-  if (!empty($row['assigned_tech'])) {
-    $showTel = !empty($row['assigned_tech_phone']) ? ' • '.$row['assigned_tech_phone'] : '';
-    echo '<div class="assigned-badge">ช่าง: '.h($row['assigned_tech']).$showTel.'</div>';
-  }
-?>
-<td class="tc" data-label="สถานะ">
-  <span class="badge <?= $s ?>"><?= statusIcon($s) ?> <?= h(statusText($s)) ?></span>
-  <?php if (!empty($row['assigned_tech'])): ?>
-    <div class="assigned-badge">ช่าง: <?= h($row['assigned_tech']) ?></div>
-  <?php endif; ?>
-</td>
-
-
           </tbody>
         </table>
       </div>
