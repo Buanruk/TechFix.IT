@@ -4,52 +4,38 @@ $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
 if ($conn->connect_error) { die("DB Error"); }
 $conn->set_charset("utf8");
 
-// ===== รับค่าสถานะ =====
-$filter = $_GET['status'] ?? 'all';
+// ===== Map ประเภทอุปกรณ์ (slug -> label แสดงผล) และ regex จับคำใน device_type =====
+$dtypes = [
+  'all'     => 'อุปกรณ์ทั้งหมด',
+  'pc'      => 'ปัญหาเกี่ยวกับคอมพิวเตอร์',
+  'printer' => 'ปัญหาเกี่ยวกับปริ้นเตอร์',
+  'laptop'  => 'ปัญหาเกี่ยวกับโน๊ตบุ๊ค',
+  'network' => 'ปัญหาเกี่ยวกับเครือข่าย',
+  'tv'      => 'ปัญหาเกี่ยวกับ TV',
+];
+// รองรับไทย/อังกฤษ/คำใกล้เคียง
+$regexMap = [
+  'pc'      => '(คอม|computer|pc|desktop)',
+  'printer' => '(ปริ้น|พรินท์|printer|พิมพ์)',
+  'laptop'  => '(โน๊ตบุ๊ค|โน้ตบุ๊ก|laptop|notebook)',
+  'network' => '(เครือข่าย|network|lan|wifi|router|switch)',
+  'tv'      => '(tv|ทีวี|monitor|จอภาพ)',
+];
+
+// ===== รับค่า “สถานะ” และ “ประเภทอุปกรณ์” =====
+$filterStatus = $_GET['status'] ?? 'all';
+if (!in_array($filterStatus, ['all','new','in_progress','done'], true)) $filterStatus = 'all';
+
+$filterDtype = $_GET['dtype'] ?? 'all';
+if (!in_array($filterDtype, array_keys($dtypes), true)) $filterDtype = 'all';
 
 // ===== ตั้งค่าการแบ่งหน้า =====
 $perPage = 10;
-$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$offset = ($page - 1) * $perPage;
+$page    = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset  = ($page - 1) * $perPage;
 
-// ===== สรุปจำนวนแต่ละสถานะ (การ์ดสรุป) =====
-$stat = ['new'=>0,'in_progress'=>0,'done'=>0,'all'=>0];
-$qr = $conn->query("SELECT status, COUNT(*) AS c FROM device_reports GROUP BY status");
-if ($qr) {
-  while($r = $qr->fetch_assoc()){
-    $key = $r['status'];
-    if (isset($stat[$key])) $stat[$key] = (int)$r['c'];
-    $stat['all'] += (int)$r['c'];
-  }
-}
-
-// ===== นับจำนวนข้อมูลทั้งหมดตามตัวกรอง เพื่อคำนวณจำนวนหน้า =====
-if ($filter === 'all') {
-  $countSql = "SELECT COUNT(*) AS total FROM device_reports";
-  $countStmt = $conn->prepare($countSql);
-} else {
-  $countSql = "SELECT COUNT(*) AS total FROM device_reports WHERE status = ?";
-  $countStmt = $conn->prepare($countSql);
-  $countStmt->bind_param("s", $filter);
-}
-$countStmt->execute();
-$countRes = $countStmt->get_result();
-$totalRows = (int)($countRes->fetch_assoc()['total'] ?? 0);
-$totalPages = max(1, (int)ceil($totalRows / $perPage));
-if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
-
-// ===== โหลดรายการตามสถานะ + LIMIT/OFFSET =====
-if ($filter === 'all') {
-  $stmt = $conn->prepare("SELECT * FROM device_reports ORDER BY id DESC LIMIT ? OFFSET ?");
-  $stmt->bind_param("ii", $perPage, $offset);
-} else {
-  $stmt = $conn->prepare("SELECT * FROM device_reports WHERE status = ? ORDER BY id DESC LIMIT ? OFFSET ?");
-  $stmt->bind_param("sii", $filter, $perPage, $offset);
-}
-$stmt->execute();
-$result = $stmt->get_result();
-
-// ===== Helpers =====
+// ===== ฟังก์ชันช่วย =====
+function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 function statusText($s){
   return match($s){
     'new'         => 'ยังไม่ซ่อม',
@@ -66,12 +52,59 @@ function statusIcon($s){
     default       => '❓',
   };
 }
-function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
-function pageUrl($p){
-  $status = $_GET['status'] ?? 'all';
+function pageUrl($p, $status, $dtype){
   $p = max(1,(int)$p);
-  return '?status='.urlencode($status).'&page='.$p;
+  return '?status='.urlencode($status).'&dtype='.urlencode($dtype).'&page='.$p;
 }
+
+/** สร้าง WHERE + types + values สำหรับ status + dtype (REGEXP) */
+function build_where_and_params($status, $dtype, $regexMap){
+  $wheres = []; $types = ''; $vals = [];
+
+  if ($status !== 'all'){ $wheres[] = "status = ?"; $types .= "s"; $vals[] = $status; }
+  if ($dtype  !== 'all' && isset($regexMap[$dtype])){
+    $wheres[] = "LOWER(device_type) REGEXP ?";
+    $types   .= "s";
+    $vals[]   = strtolower($regexMap[$dtype]);
+  }
+
+  $whereSQL = $wheres ? ("WHERE ".implode(" AND ", $wheres)) : "";
+  return [$whereSQL, $types, $vals];
+}
+
+// ===== สรุปจำนวนแต่ละสถานะ (การ์ดสรุป) — รวมทุกประเภทอุปกรณ์ (ไม่ผูกกับ dtype) =====
+$stat = ['new'=>0,'in_progress'=>0,'done'=>0,'all'=>0];
+$qr = $conn->query("SELECT status, COUNT(*) AS c FROM device_reports GROUP BY status");
+if ($qr) {
+  while($r = $qr->fetch_assoc()){
+    $key = $r['status'];
+    if (isset($stat[$key])) $stat[$key] = (int)$r['c'];
+    $stat['all'] += (int)$r['c'];
+  }
+}
+
+// ===== นับจำนวนตามตัวกรอง (status + dtype) เพื่อคำนวณจำนวนหน้า =====
+[$whereCnt, $typesCnt, $valsCnt] = build_where_and_params($filterStatus, $filterDtype, $regexMap);
+$countSql  = "SELECT COUNT(*) AS total FROM device_reports $whereCnt";
+$countStmt = $conn->prepare($countSql);
+if ($typesCnt) $countStmt->bind_param($typesCnt, ...$valsCnt);
+$countStmt->execute();
+$countRes  = $countStmt->get_result();
+$totalRows = (int)($countRes->fetch_assoc()['total'] ?? 0);
+$totalPages = max(1, (int)ceil($totalRows / $perPage));
+if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
+
+// ===== โหลดรายการตามตัวกรอง + LIMIT/OFFSET =====
+[$whereSel, $typesSel, $valsSel] = build_where_and_params($filterStatus, $filterDtype, $regexMap);
+$selSql = "SELECT * FROM device_reports $whereSel ORDER BY id DESC LIMIT ? OFFSET ?";
+$typesSel .= "ii";
+$valsSel[] = $perPage;
+$valsSel[] = $offset;
+
+$stmt = $conn->prepare($selSql);
+$stmt->bind_param($typesSel, ...$valsSel);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 <!doctype html>
 <html lang="th">
@@ -157,8 +190,9 @@ function pageUrl($p){
   .kpi .num{font-size:26px;font-weight:900}
   .kpi.new .num{color:var(--red)} .kpi.progress .num{color:var(--blue-strong)} .kpi.done .num{color:var(--green)}
 
-  /* Filter */
-  .toolbar{display:flex; align-items:center; justify-content:center; gap:12px; padding:12px 18px; color:#667085; flex-wrap:wrap}
+  /* Filters: ซ้าย = ประเภทอุปกรณ์, ขวา = สถานะ */
+  .toolbar{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 18px; color:#667085; flex-wrap:wrap}
+  .group{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
   .label{display:flex; align-items:center; gap:8px; font-weight:800; color:#0a2540; letter-spacing:.2px}
   .select{
     -webkit-appearance:none; -moz-appearance:none; appearance:none;
@@ -177,21 +211,15 @@ function pageUrl($p){
      Table
      ========================= */
   .table-wrap{background:#fff;border-top:1px solid var(--line);overflow-x:auto}
-  table{
-    width:100%;
-    border-collapse:separate; border-spacing:0;
-    font-size:14.5px;
-    table-layout:fixed;
-  }
-  /* ปรับสัดส่วน: ลดหมายเลขเครื่อง, ขยายปัญหาให้กินที่เหลือ */
+  table{ width:100%; border-collapse:separate; border-spacing:0; font-size:14.5px; table-layout:fixed; }
   colgroup col.c-queue{width:100px}
   colgroup col.c-name{width:210px}
   colgroup col.c-device{width:180px}
   colgroup col.c-serial{width:160px}
   colgroup col.c-room{width:110px}
-  colgroup col.c-issue{ width:340px; }           /* desktop กว้าง */
-@media (max-width:1280px){ colgroup col.c-issue{ width:300px; } }
-@media (max-width:1080px){ colgroup col.c-issue{ width:260px; } }
+  colgroup col.c-issue{ width:340px; }
+  @media (max-width:1280px){ colgroup col.c-issue{ width:300px; } }
+  @media (max-width:1080px){ colgroup col.c-issue{ width:260px; } }
   colgroup col.c-phone{width:160px}
   colgroup col.c-time{width:190px}
   colgroup col.c-status{width:140px}
@@ -207,14 +235,8 @@ function pageUrl($p){
   .nowrap{white-space:nowrap}
   .ellipsis{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .issue{
-    display:-webkit-box;
-    -webkit-line-clamp:4;
-    -webkit-box-orient:vertical;
-    overflow:hidden;
-    line-height:1.55;
-    white-space:normal;
-    word-break:break-word;
-    overflow-wrap:anywhere;
+    display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical;
+    overflow:hidden; line-height:1.55; white-space:normal; word-break:break-word; overflow-wrap:anywhere;
   }
 
   /* Badge */
@@ -246,7 +268,7 @@ function pageUrl($p){
   .pager .active{background:#e8f2ff; border-color:#b9dcff; color:#0b63c8}
   .pager .disabled{opacity:.45; pointer-events:none}
 
-  /* ===== มือถือ: ซ่อนบางคอลัมน์ + ทำเป็นแถวการ์ดอ่านง่าย ===== */
+  /* ===== มือถือ ===== */
   @media (max-width:920px){
     .brand-sub{display:none}
     thead th, tbody td{padding:10px 12px}
@@ -256,8 +278,6 @@ function pageUrl($p){
     colgroup col.c-time{width:170px}
     .issue{-webkit-line-clamp:3}
   }
-
-  /* ซ่อนคอลัมน์รองบนจอเล็กมาก และแสดง label ต่อแถว */
   @media (max-width:680px){
     thead{display:none}
     table{border-collapse:collapse}
@@ -280,10 +300,12 @@ function pageUrl($p){
       font-weight:800; color:#0f3a66;
       opacity:.9;
     }
-    /* ซ่อนบางคอลัมน์ที่ยาวเกินความจำเป็น */
     td.hide-sm{display:none}
     .nowrap{white-space:normal}
     .ellipsis{white-space:normal}
+    /* ฟอร์มกรองเป็นคอลัมน์ */
+    .toolbar{flex-direction:column; align-items:stretch; gap:10px}
+    .select{min-width:unset; width:100%}
   }
 </style>
 </head>
@@ -335,7 +357,7 @@ function pageUrl($p){
     <section class="panel">
       <header class="panel-head"><h1 class="title">รายการแจ้งซ่อมทั้งหมด</h1></header>
 
-      <!-- KPI -->
+      <!-- KPI (รวมทั้งหมด) -->
       <div class="kpis">
         <div class="kpi total"><h4>ทั้งหมด</h4><div class="num"><?= (int)$stat['all'] ?></div></div>
         <div class="kpi new"><h4>ยังไม่ซ่อม</h4><div class="num"><?= (int)$stat['new'] ?></div></div>
@@ -343,17 +365,26 @@ function pageUrl($p){
         <div class="kpi done"><h4>ซ่อมเสร็จ</h4><div class="num"><?= (int)$stat['done'] ?></div></div>
       </div>
 
-      <!-- Filter -->
+      <!-- Filters: ซ้าย = ประเภทอุปกรณ์, ขวา = สถานะ -->
       <form class="toolbar" method="get">
-        <label class="label" for="status">กรองสถานะ:</label>
-        <select class="select" id="status" name="status" onchange="this.form.submit()">
-          <option value="all"         <?= $filter==='all' ? 'selected' : '' ?>>ทั้งหมด</option>
-          <option value="new"         <?= $filter==='new' ? 'selected' : '' ?>>❌ ยังไม่ซ่อม</option>
-          <option value="in_progress" <?= $filter==='in_progress' ? 'selected' : '' ?>>🔧 กำลังซ่อม</option>
-          <option value="done"        <?= $filter==='done' ? 'selected' : '' ?>>✅ ซ่อมเสร็จ</option>
-        </select>
-        <!-- รักษาหน้าปัจจุบันให้เป็น 1 เมื่อเปลี่ยนตัวกรอง -->
-        <input type="hidden" name="page" value="1">
+        <div class="group">
+          <label class="label" for="dtype">กรองอุปกรณ์:</label>
+          <select class="select" id="dtype" name="dtype" onchange="this.form.page.value=1; this.form.submit()">
+            <?php foreach($dtypes as $slug=>$label): ?>
+              <option value="<?= h($slug) ?>" <?= $filterDtype===$slug?'selected':'' ?>><?= h($label) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="group">
+          <label class="label" for="status">กรองสถานะ:</label>
+          <select class="select" id="status" name="status" onchange="this.form.page.value=1; this.form.submit()">
+            <option value="all"         <?= $filterStatus==='all' ? 'selected' : '' ?>>ทั้งหมด</option>
+            <option value="new"         <?= $filterStatus==='new' ? 'selected' : '' ?>>❌ ยังไม่ซ่อม</option>
+            <option value="in_progress" <?= $filterStatus==='in_progress' ? 'selected' : '' ?>>🔧 กำลังซ่อม</option>
+            <option value="done"        <?= $filterStatus==='done' ? 'selected' : '' ?>>✅ ซ่อมเสร็จ</option>
+          </select>
+        </div>
+        <input type="hidden" name="page" value="<?= (int)$page ?>">
       </form>
 
       <!-- Table -->
@@ -395,10 +426,12 @@ function pageUrl($p){
                 <td class="ellipsis hide-sm" data-label="หมายเลขเครื่อง" title<?= '="'.h($row['serial_number']).'"' ?>><?= h($row['serial_number']) ?></td>
                 <td class="tc" data-label="ห้อง"><?= h($room) ?></td>
                 <td class="issue-cell" data-label="ปัญหา">
-  <div class="issue-scroll"
-       title="<?= h($row['issue_description']) ?>"
-       aria-label="รายละเอียดปัญหา — เลื่อนไปทางขวาเพื่ออ่านต่อ">
-    <?= h($row['issue_description']) ?></td>
+                  <div class="issue-scroll"
+                       title="<?= h($row['issue_description']) ?>"
+                       aria-label="รายละเอียดปัญหา — เลื่อนไปทางขวาเพื่ออ่านต่อ">
+                    <?= h($row['issue_description']) ?>
+                  </div>
+                </td>
                 <td class="nowrap hide-sm" data-label="เบอร์โทร"><?= h($row['phone_number']) ?></td>
                 <td class="nowrap" data-label="เวลาแจ้ง" title="<?= h($row['report_date']) ?>">
                   <?= h(@date('d/m/Y H:i', strtotime($row['report_date'])) ?: $row['report_date']) ?>
@@ -407,26 +440,24 @@ function pageUrl($p){
                   <span class="badge <?= $s ?>"><?= statusIcon($s) ?> <?= h(statusText($s)) ?></span>
                 </td>
                 <td class="tc" data-label="เปลี่ยนสถานะ">
-  <!-- เปลี่ยนสถานะ -->
-  <form method="POST" action="/update_status.php" style="margin-bottom:6px">
-    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-    <!-- รักษาหน้าปัจจุบันหลัง submit -->
-    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
-    <select name="status" class="status-select <?= $selectClass ?>" onchange="this.form.submit()">
-      <option value="new"         <?= $s==='new'?'selected':'' ?>>❌ ยังไม่ซ่อม</option>
-      <option value="in_progress" <?= $s==='in_progress'?'selected':'' ?>>🔧 กำลังซ่อม</option>
-      <option value="done"        <?= $s==='done'?'selected':'' ?>>✅ ซ่อมเสร็จ</option>
-    </select>
-  </form>
-
-  <!-- ปุ่มลบรายการ -->
-  <form method="POST" action="/delete_report.php"
-        onsubmit="return confirm('ยืนยันลบคิว <?= h($row['queue_number']) ?> (ID: <?= (int)$row['id'] ?>) ?');">
-    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
-    <button type="submit" class="btn-del">🗑️ ลบ</button>
-  </form>
-</td>
+                  <!-- เปลี่ยนสถานะ -->
+                  <form method="POST" action="/update_status.php" style="margin-bottom:6px">
+                    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+                    <select name="status" class="status-select <?= $selectClass ?>" onchange="this.form.submit()">
+                      <option value="new"         <?= $s==='new'?'selected':'' ?>>❌ ยังไม่ซ่อม</option>
+                      <option value="in_progress" <?= $s==='in_progress'?'selected':'' ?>>🔧 กำลังซ่อม</option>
+                      <option value="done"        <?= $s==='done'?'selected':'' ?>>✅ ซ่อมเสร็จ</option>
+                    </select>
+                  </form>
+                  <!-- ปุ่มลบรายการ -->
+                  <form method="POST" action="/delete_report.php"
+                        onsubmit="return confirm('ยืนยันลบคิว <?= h($row['queue_number']) ?> (ID: <?= (int)$row['id'] ?>) ?');">
+                    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+                    <button type="submit" class="btn-del">🗑️ ลบ</button>
+                  </form>
+                </td>
               </tr>
             <?php endwhile; ?>
           <?php endif; ?>
@@ -436,35 +467,27 @@ function pageUrl($p){
 
       <!-- Pagination -->
       <nav class="pager" aria-label="เปลี่ยนหน้า">
+        <?php $prev = $page - 1; $next = $page + 1; ?>
+        <a class="<?= $page<=1 ? 'disabled':'' ?>" href="<?= $page<=1 ? '#' : h(pageUrl($prev,$filterStatus,$filterDtype)) ?>" aria-label="ก่อนหน้า">«</a>
         <?php
-          $prev = $page - 1;
-          $next = $page + 1;
-        ?>
-        <a class="<?= $page<=1 ? 'disabled':'' ?>" href="<?= $page<=1 ? '#' : h(pageUrl($prev)) ?>" aria-label="ก่อนหน้า">«</a>
-
-        <?php
-          // แสดงเลขหน้าแบบกระชับ: ช่วงรอบๆ หน้าปัจจุบัน
-          $window = 2; // หน้าก่อน/หลัง
+          $window = 2;
           $start = max(1, $page - $window);
           $end   = min($totalPages, $page + $window);
 
           if ($start > 1){
-            echo '<a href="'.h(pageUrl(1)).'">1</a>';
+            echo '<a href="'.h(pageUrl(1,$filterStatus,$filterDtype)).'">1</a>';
             if ($start > 2) echo '<span class="disabled">…</span>';
           }
           for($p=$start; $p<=$end; $p++){
             if ($p == $page) echo '<span class="active">'.$p.'</span>';
-            else echo '<a href="'.h(pageUrl($p)).'">'.$p.'</a>';
+            else echo '<a href="'.h(pageUrl($p,$filterStatus,$filterDtype)).'">'.$p.'</a>';
           }
           if ($end < $totalPages){
             if ($end < $totalPages-1) echo '<span class="disabled">…</span>';
-            echo '<a href="'.h(pageUrl($totalPages)).'">'.$totalPages.'</a>';
+            echo '<a href="'.h(pageUrl($totalPages,$filterStatus,$filterDtype)).'">'.$totalPages.'</a>';
           }
         ?>
-
-        <a class="<?= $page>=$totalPages ? 'disabled':'' ?>" href="<?= $page>=$totalPages ? '#' : h(pageUrl($next)) ?>" aria-label="ถัดไป">»</a>
-
-        <!-- แสดงสรุป -->
+        <a class="<?= $page>=$totalPages ? 'disabled':'' ?>" href="<?= $page>=$totalPages ? '#' : h(pageUrl($next,$filterStatus,$filterDtype)) ?>" aria-label="ถัดไป">»</a>
         <span class="disabled" style="border:none">หน้า <?= $page ?> / <?= $totalPages ?> • ทั้งหมด <?= number_format($totalRows) ?> รายการ</span>
       </nav>
 
@@ -485,34 +508,28 @@ function pageUrl($p){
     btn.setAttribute('aria-expanded', show ? 'true' : 'false');
     menu.setAttribute('aria-hidden', show ? 'false' : 'true');
   }
-  // ปิดเมนูเมื่อคลิกนอกพื้นที่
   document.addEventListener('click', (e)=>{
     const menu = document.getElementById('navMenu');
     const btn = document.querySelector('.hb-btn');
     if (!menu) return;
     if (!menu.contains(e.target) && !btn.contains(e.target)) {
-      menu.classList.remove('show');
-      btn.classList.remove('active');
-      btn.setAttribute('aria-expanded','false');
-      menu.setAttribute('aria-hidden','true');
+      menu.classList.remove('show'); btn.classList.remove('active');
+      btn.setAttribute('aria-expanded','false'); menu.setAttribute('aria-hidden','true');
     }
   });
-  // ปิดด้วยปุ่ม Esc
   document.addEventListener('keydown',(e)=>{
     if(e.key === 'Escape'){
       const menu = document.getElementById('navMenu');
       const btn = document.querySelector('.hb-btn');
       if(menu && menu.classList.contains('show')){
-        menu.classList.remove('show');
-        btn.classList.remove('active');
-        btn.setAttribute('aria-expanded','false');
-        menu.setAttribute('aria-hidden','true');
+        menu.classList.remove('show'); btn.classList.remove('active');
+        btn.setAttribute('aria-expanded','false'); menu.setAttribute('aria-hidden','true');
       }
     }
   });
 </script>
 
-<!-- ===== Live update notice + auto refresh (วางไว้เหนือ </body>) ===== -->
+<!-- ===== Live update notice + auto refresh (ไม่ต้องแก้) ===== -->
 <style>
   .live-notice{
     position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
@@ -527,12 +544,9 @@ function pageUrl($p){
 </div>
 
 <script>
-  // === ตั้งค่าเส้นทางไฟล์ ping ===
-  const PING_URL = 'changes_ping.php';          // <-- ถ้าไฟล์อยู่รากเว็บ
-  // const PING_URL = '/techfix/changes_ping.php'; // <-- ถ้าไฟล์อยู่ในโฟลเดอร์โปรเจกต์
-
-  const POLL_MS  = 5000;   // ยิงเช็คทุก 5 วินาที
-  let lastSig = null;      // เก็บลายเซ็นรอบก่อน
+  const PING_URL = 'changes_ping.php';
+  const POLL_MS  = 5000;
+  let lastSig = null;
 
   async function pingChanges() {
     try {
@@ -541,25 +555,15 @@ function pageUrl($p){
       const j = await res.json();
       if (!j || !j.sig) return;
 
-      if (lastSig === null) {
-        // ครั้งแรก: ตั้งต้นด้วยค่าล่าสุด ไม่รีหน้า
-        lastSig = j.sig;
-        return;
-      }
-
+      if (lastSig === null) { lastSig = j.sig; return; }
       if (j.sig !== lastSig) {
-        // มีการเปลี่ยนแปลง: โชว์แถบแจ้งเตือน แล้วรีเฟรช
         lastSig = j.sig;
         const n = document.getElementById('liveNotice');
         if (n) n.style.display = 'inline-flex';
         setTimeout(() => location.reload(), 800);
       }
-    } catch (e) {
-      // เงียบ ๆ ไป ไม่ต้องเตือนผู้ใช้
-    }
+    } catch (e) {}
   }
-
-  // ยิงทันทีเมื่อโหลดหน้า / กลับมาโฟกัส / และโพลลิ่งทุก POLL_MS
   let pollTimer = setInterval(pingChanges, POLL_MS);
   window.addEventListener('load', pingChanges);
   document.addEventListener('visibilitychange', () => {
