@@ -22,7 +22,6 @@ $regexMap = [
   'tv'      => '(tv|ทีวี|monitor|จอภาพ)',
 ];
 
-// ===== รายชื่อช่าง (ปรับเพิ่มได้) =====
 $TECHS = [
   'tong' => ['name' => 'ช่างโต้ง', 'phone' => '081-111-1111'],
   'chai' => ['name' => 'ช่างชาย', 'phone' => '082-222-2222'],
@@ -238,7 +237,6 @@ $result = $stmt->get_result();
   colgroup col.c-time{width:190px}
   colgroup col.c-status{width:140px}
   colgroup col.c-action{width:180px}
-  colgroup col.c-assign{width:180px}   /* เพิ่มคอลัมน์มอบหมายช่าง */
 
   thead th{position:sticky; top:0; z-index:2; background:linear-gradient(180deg,#f7fbff 0,#eef6ff 100%); color:#0f3a66; font-weight:800; letter-spacing:.2px; padding:14px 16px; border-bottom:1px solid var(--line); text-align:left;}
   tbody td{padding:14px 16px; border-top:1px solid var(--line); vertical-align:top; background:#fff;}
@@ -263,22 +261,8 @@ $result = $stmt->get_result();
   /* Select เปลี่ยนสถานะ */
   .status-select{padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:700;cursor:pointer}
   .status-select:focus{border-color:#1e88e5;box-shadow:0 0 0 3px rgba(30,136,229,.15)}
-  .select-new{color:#c62828} .select-progress{color:#0b63c8} .select-done{color:#2e7d32}
+  .select-new{color:var(--red)} .select-progress{color:#0b63c8} .select-done{color:#2e7d32}
   .empty{padding:28px;text-align:center;color:#667085}
-
-  /* === Assign Technician dropdown === */
-  .tech-select{
-    padding:6px 10px; border:1px solid var(--line); border-radius:10px;
-    background:#fff; font-weight:800; min-width:160px; cursor:pointer;
-    box-shadow:0 1px 0 rgba(255,255,255,.6), 0 8px 18px rgba(10,37,64,.06);
-  }
-  .tech-select:focus{ border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.15) }
-  .tech-tong{ color:#0b63c8 } .tech-chai{ color:#2e7d32 } .tech-bew{ color:#c62828 }
-  .assigned-badge{
-    display:inline-flex; align-items:center; gap:6px; margin-top:6px;
-    padding:4px 8px; border-radius:999px; font-size:12.5px;
-    background:#eef5ff; color:#0b63c8; border:1px solid #d6eaff;
-  }
 
   /* ===== Pagination ===== */
   .pager{
@@ -422,7 +406,7 @@ $result = $stmt->get_result();
           <colgroup>
             <col class="c-queue"><col class="c-name"><col class="c-device"><col class="c-serial">
             <col class="c-room"><col class="c-issue"><col class="c-phone"><col class="c-time">
-            <col class="c-status"><col class="c-action"><col class="c-assign">
+            <col class="c-status"><col class="c-action">
           </colgroup>
           <thead>
             <tr>
@@ -436,21 +420,17 @@ $result = $stmt->get_result();
               <th>เวลาแจ้ง</th>
               <th class="tc">สถานะ</th>
               <th class="tc">เปลี่ยนสถานะ</th>
-              <th class="tc">มอบหมายช่าง</th> <!-- เพิ่มใหม่ -->
             </tr>
           </thead>
           <tbody>
           <?php if ($result->num_rows === 0): ?>
-            <tr><td colspan="11" class="empty">ยังไม่มีรายการตามเงื่อนไขที่เลือก</td></tr>
+            <tr><td colspan="10" class="empty">ยังไม่มีรายการตามเงื่อนไขที่เลือก</td></tr>
           <?php else: ?>
             <?php while($row = $result->fetch_assoc()): ?>
               <?php
                 $room = $row['room'] ?? ($row['floor'] ?? '');
                 $s = in_array($row['status'], ['new','in_progress','done']) ? $row['status'] : 'new';
                 $selectClass = $s==='new' ? 'select-new' : ($s==='in_progress' ? 'select-progress' : 'select-done');
-                $assignedName  = (string)($row['assigned_tech'] ?? '');
-                $assignedPhone = (string)($row['assigned_tech_phone'] ?? '');
-                $assignedSlug  = findTechSlug($assignedName, $TECHS);
               ?>
               <tr>
                 <td class="tc queue-cell" data-label="คิว"><?= h($row['queue_number']) ?></td>
@@ -472,9 +452,8 @@ $result = $stmt->get_result();
                 <td class="tc" data-label="สถานะ">
                   <span class="badge <?= $s ?>"><?= statusIcon($s) ?> <?= h(statusText($s)) ?></span>
                 </td>
-
-                <!-- เปลี่ยนสถานะ -->
                 <td class="tc" data-label="เปลี่ยนสถานะ">
+                  <!-- เปลี่ยนสถานะ -->
                   <form method="POST" action="/update_status.php" style="margin-bottom:6px">
                     <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                     <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
@@ -484,34 +463,13 @@ $result = $stmt->get_result();
                       <option value="done"        <?= $s==='done'?'selected':'' ?>>✅ ซ่อมเสร็จ</option>
                     </select>
                   </form>
+                  <!-- ปุ่มลบรายการ -->
                   <form method="POST" action="/delete_report.php"
                         onsubmit="return confirm('ยืนยันลบคิว <?= h($row['queue_number']) ?> (ID: <?= (int)$row['id'] ?>) ?');">
                     <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                     <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
                     <button type="submit" class="btn-del">🗑️ ลบ</button>
                   </form>
-                </td>
-
-                <!-- มอบหมายช่าง -->
-                <td class="tc" data-label="มอบหมายช่าง">
-                  <?php $disabledTech = ($s === 'done') ? 'disabled' : ''; ?>
-                  <form method="POST" action="/assign_work.php" style="margin-top:0">
-                    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-                    <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
-                    <select name="tech"
-                            class="tech-select status-select <?= $assignedSlug ? 'tech-'.$assignedSlug : '' ?>"
-                            onchange="this.form.submit()" <?= $disabledTech ?> title="มอบหมายช่าง">
-                      <option value="" <?= $assignedSlug===''?'selected':'' ?>>👷 เลือกช่าง…</option>
-                      <?php foreach ($TECHS as $slug=>$t): ?>
-                        <option value="<?= h($slug) ?>" <?= $assignedSlug===$slug?'selected':'' ?>>🧑‍🔧 <?= h($t['name']) ?></option>
-                      <?php endforeach; ?>
-                    </select>
-                  </form>
-                  <?php if ($assignedName): ?>
-                    <div class="assigned-badge">
-                      ช่าง: <?= h($assignedName) ?><?= $assignedPhone ? ' • '.h($assignedPhone) : '' ?>
-                    </div>
-                  <?php endif; ?>
                 </td>
               </tr>
             <?php endwhile; ?>
@@ -559,7 +517,7 @@ $result = $stmt->get_result();
     const menu = document.getElementById('navMenu');
     const show = !menu.classList.contains('show');
     menu.classList.toggle('show', show);
-    btn.classList.toggle('active, show');
+    btn.classList.toggle('active', show);
     btn.setAttribute('aria-expanded', show ? 'true' : 'false');
     menu.setAttribute('aria-hidden', show ? 'false' : 'true');
   }
@@ -584,7 +542,7 @@ $result = $stmt->get_result();
   });
 </script>
 
-<!-- ===== Live update notice + auto refresh ===== -->
+<!-- ===== Live update notice + auto refresh (ไม่ต้องแก้) ===== -->
 <style>
   .live-notice{
     position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
@@ -593,19 +551,23 @@ $result = $stmt->get_result();
     display: none; z-index: 2000;
   }
 </style>
+
 <div id="liveNotice" class="live-notice" role="status" aria-live="polite">
   มีการอัปเดตใหม่ กำลังโหลดข้อมูล...
 </div>
+
 <script>
   const PING_URL = 'changes_ping.php';
   const POLL_MS  = 5000;
   let lastSig = null;
+
   async function pingChanges() {
     try {
       const res = await fetch(PING_URL, { cache: 'no-store' });
       if (!res.ok) return;
       const j = await res.json();
       if (!j || !j.sig) return;
+
       if (lastSig === null) { lastSig = j.sig; return; }
       if (j.sig !== lastSig) {
         lastSig = j.sig;
@@ -621,99 +583,6 @@ $result = $stmt->get_result();
     if (document.visibilityState === 'visible') pingChanges();
   });
 </script>
+<!-- ===== End live update ===== -->
 </body>
 </html>
-2) สร้างไฟล์ assign_work.php (ใหม่ทั้งไฟล์)
-php
-คัดลอกโค้ด
-<?php
-// assign_work.php – เลือกช่างแล้วอัปเดตเป็นกำลังซ่อม + ส่ง LINE + บันทึกลง DB
-
-// ===== DB connect =====
-if (file_exists(__DIR__.'/db_connect.php')) {
-  require_once __DIR__.'/db_connect.php'; // ควรสร้าง $conn ให้พร้อมใช้งาน
-} else {
-  $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
-  if ($conn->connect_error) { die("DB Error"); }
-  $conn->set_charset("utf8");
-}
-
-// ===== รายชื่อช่าง =====
-$TECHS = [
-  'tong' => ['name' => 'ช่างโต้ง', 'phone' => '081-111-1111'],
-  'chai' => ['name' => 'ช่างชาย',  'phone' => '082-222-2222'],
-  'bew'  => ['name' => 'ช่างบิว',   'phone' => '083-333-3333'],
-];
-
-// ===== LINE push helper =====
-if (file_exists(__DIR__.'/line_push.php')) {
-  require_once __DIR__.'/line_push.php';   // function line_push($to, array $messages)
-} else {
-  require_once __DIR__.'/line_config.php'; // ต้องมี LINE_CH_ACCESS_TOKEN
-  if (!function_exists('line_push')) {
-    function line_push($to, array $messages){
-      if (!$to || !defined('LINE_CH_ACCESS_TOKEN')) return false;
-      $ch = curl_init('https://api.line.me/v2/bot/message/push');
-      curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-          'Content-Type: application/json',
-          'Authorization: Bearer '.LINE_CH_ACCESS_TOKEN
-        ],
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode(['to'=>$to,'messages'=>$messages], JSON_UNESCAPED_UNICODE),
-        CURLOPT_TIMEOUT => 10,
-      ]);
-      curl_exec($ch);
-      $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-      curl_close($ch);
-      return $http>=200 && $http<300;
-    }
-  }
-}
-
-function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
-
-// ===== รับค่า =====
-$id    = isset($_POST['id']) ? (int)$_POST['id'] : 0;
-$tech  = $_POST['tech'] ?? '';
-$redir = $_POST['redirect'] ?? 'admin_dashboard.php';
-if (!$id || !isset($TECHS[$tech])) { header("Location: ".$redir); exit; }
-
-$name = $TECHS[$tech]['name'];
-$tel  = $TECHS[$tech]['phone'];
-
-// ===== ดึงข้อมูลงาน =====
-$stmt = $conn->prepare("SELECT * FROM device_reports WHERE id=?");
-$stmt->bind_param("i",$id);
-$stmt->execute();
-$job = $stmt->get_result()->fetch_assoc();
-$stmt->close();
-if (!$job) { header("Location: ".$redir); exit; }
-
-// ===== อัปเดตสถานะ + บันทึกช่าง =====
-$upd = $conn->prepare("
-  UPDATE device_reports
-     SET status='in_progress',
-         assigned_tech=?,
-         assigned_tech_phone=?,
-         assigned_at=NOW()
-   WHERE id=?");
-$upd->bind_param("ssi", $name, $tel, $id);
-$upd->execute();
-$upd->close();
-
-// ===== ส่ง LINE (ถ้ามี line_user_id) =====
-$lineId = $job['line_user_id'] ?? '';
-if ($lineId) {
-  $title   = "สถานะอัปเดต: กำลังซ่อม";
-  $detail  = "อุปกรณ์: ".$job['device_type'].($job['serial_number'] ? " (".$job['serial_number'].")" : "");
-  $techStr = "ช่างผู้ดูแล: ".$name." • ".$tel;
-  $report  = "แจ้งเมื่อ: ".(@date('d/m/Y H:i', strtotime($job['report_date'])) ?: $job['report_date']);
-  $issue   = "ปัญหา: ".$job['issue_description'];
-  $msg     = $title."\n".$detail."\n".$techStr."\n".$report."\n".$issue;
-  @line_push($lineId, [['type'=>'text','text'=>$msg]]);
-}
-
-header("Location: ".$redir);
-exit;
