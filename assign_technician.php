@@ -1,47 +1,13 @@
 <?php
-// assign_technician.php
+// assign_technician.php (เวอร์ชันใหม่ ใช้ระบบ LINE Push Message ที่มีอยู่แล้ว)
 
-// ===== กรุณาตรวจสอบว่า LINE NOTIFY ACCESS TOKEN ของคุณถูกต้อง =====
-define('LINE_NOTIFY_TOKEN', '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU=');
+// 1. เรียกใช้งานไฟล์ config ที่มีฟังก์ชัน line_push() และ Token อยู่แล้ว
+require_once 'line_config.php';
 
-
-/**
- * ฟังก์ชันสำหรับส่งข้อความแจ้งเตือนไปยัง LINE Notify
- * @param string $message ข้อความที่ต้องการส่ง
- * @return void
- */
-function sendLineNotify($message) {
-    if (!defined('LINE_NOTIFY_TOKEN') || LINE_NOTIFY_TOKEN === 'YOUR_LINE_NOTIFY_ACCESS_TOKEN' || empty(LINE_NOTIFY_TOKEN)) {
-        return; // ไม่ต้องทำอะไรถ้ายังไม่ได้ตั้งค่า Token
-    }
-
-    // URL ที่ถูกต้องและสะอาด
-    $url = 'https://notify-api.line.me/api/notify';
-    
-    $headers = [
-        'Content-Type: application/x-www-form-urlencoded',
-        'Authorization: Bearer ' . LINE_NOTIFY_TOKEN,
-    ];
-    $data = ['message' => $message];
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-
-    curl_exec($ch);
-    curl_close($ch);
-}
-
-// ตรวจสอบว่าเป็นการส่งข้อมูลมาแบบ POST และมีข้อมูลครบถ้วน
+// 2. ตรวจสอบว่าเป็นการส่งข้อมูลมาแบบ POST และมีข้อมูลครบถ้วน
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['technician'])) {
 
-    // เชื่อมต่อฐานข้อมูล
+    // 3. เชื่อมต่อฐานข้อมูล
     $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
     if ($conn->connect_error) { die("DB Error"); }
     $conn->set_charset("utf8");
@@ -49,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['technic
     $reportId = (int)$_POST['id'];
     $technicianName = trim($_POST['technician']);
 
-    // อัปเดตฐานข้อมูล
+    // 4. อัปเดตฐานข้อมูล: เปลี่ยนสถานะเป็น 'กำลังซ่อม' และบันทึกชื่อช่าง
     $updateSql = "UPDATE device_reports SET status = 'in_progress', assigned_technician = ? WHERE id = ?";
     $stmt = $conn->prepare($updateSql);
     if ($stmt) {
@@ -58,28 +24,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['technic
         $stmt->close();
     }
 
-    // ดึงข้อมูลคิวเพื่อใช้ในการแจ้งเตือน
+    // 5. ดึงข้อมูลที่จำเป็นสำหรับการแจ้งเตือน (รวมถึง line_user_id)
+    // *** หากคอลัมน์ที่เก็บ ID ผู้ใช้ LINE ของคุณไม่ใช่ชื่อ 'line_user_id' กรุณาแก้ไขตรงนี้ ***
+    $line_user_id = null;
     $queueNumber = 'N/A';
-    $qStmt = $conn->prepare("SELECT queue_number FROM device_reports WHERE id = ?");
+    $qStmt = $conn->prepare("SELECT queue_number, line_user_id FROM device_reports WHERE id = ?");
     if ($qStmt) {
         $qStmt->bind_param('i', $reportId);
         $qStmt->execute();
         $result = $qStmt->get_result();
         if ($row = $result->fetch_assoc()) {
             $queueNumber = $row['queue_number'];
+            $line_user_id = $row['line_user_id']; // ดึง User ID ของ LINE จากฐานข้อมูล
         }
         $qStmt->close();
     }
 
     $conn->close();
 
-    // สร้างข้อความและส่งแจ้งเตือน
-    if (!empty($technicianName)) {
-        $message = "คิว {$queueNumber} มอบหมายให้ช่าง: {$technicianName} (กำลังดำเนินการซ่อม)";
-        sendLineNotify($message);
+    // 6. สร้างข้อความและส่งแจ้งเตือนผ่านฟังก์ชัน line_push() ที่มีอยู่แล้ว
+    if (!empty($technicianName) && !empty($line_user_id)) {
+        
+        // จัดรูปแบบข้อความตามที่ฟังก์ชัน line_push() ต้องการ
+        $messageText = "คิว {$queueNumber} ของคุณ\nมอบหมายให้ช่าง: {$technicianName}\nสถานะ: กำลังดำเนินการซ่อม";
+        
+        $messages = [
+            [
+                'type' => 'text',
+                'text' => $messageText
+            ]
+        ];
+
+        // เรียกใช้ฟังก์ชัน line_push() จากไฟล์ line_config.php
+        line_push($line_user_id, $messages);
     }
     
-    // กลับไปยังหน้าเดิม (พร้อม Cache Buster)
+    // 7. กลับไปยังหน้าเดิม
     $redirectUrl = $_POST['redirect'] ?? 'admin_dashboard.php';
     $cacheBuster = (strpos($redirectUrl, '?') === false) ? '?' : '&';
     $redirectUrl .= $cacheBuster . 't=' . time();
