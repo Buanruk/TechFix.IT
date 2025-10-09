@@ -141,7 +141,7 @@
     <div class="hero-bg"></div>
 
     <!-- Parallax decorative layers -->
-    <img class="layer" data-parallax data-speed="-0.25" src="image/robot.jpg" alt="" style="top:10%;left:-4%;width:28vw;max-width:360px;opacity:.35" />
+    <img class="layer" data-parallax data-speed="-0.25" src="image/logo2.png" alt="" style="top:10%;left:-4%;width:28vw;max-width:360px;opacity:.35" />
     <img class="layer floating" data-parallax data-speed="0.12" src="image/logo2.png" alt="" style="top:18%;right:-6%;width:30vw;max-width:400px;opacity:.28" />
     <img class="layer" data-parallax data-speed="-0.15" alt="" style="bottom:-6%;left:8%;width:22vw;max-width:300px;opacity:.22" />
 
@@ -173,7 +173,7 @@
   <main id="story" class="wrap story" aria-label="ลำดับคุณสมบัติ">
     <section class="frame">
       <div class="glass reveal">
-        <h2 style="margin:0 0 8px;font-size:clamp(22px,3.5vw,34px)"><span style="color:var(--brand)">แจ้งซ่อม</span> ง่ายสุด ๆ</h2>
+        <h2 style="margin:0 0 8px;font-size:clamp(22px,3.5vw,34px)"><span style="color:var(--brand)">แจ้งซ่อมง่ายๆ</span> ไม่กี่ขั้นตอน</h2>
         <p class="lead">สแกน QR ผ่าน LINE กรอกข้อมูลแจ้งซ่อมเพียงไม่กี่ขั้นตอน <br> ระบบจะรับข้อมูลการแจ้งซ่อมและส่งคิวให้ทันที</p>
         <ul style="margin:12px 0 0;color:var(--muted);line-height:1.9">
           <li>รองรับอุปกรณ์ IT ทุกชนิด</li>
@@ -198,7 +198,7 @@
         </ul>
       </div>
       <div class="reveal">
-        <img src="image/home.png" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
+       <img src="image/hand.jpg" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
       </div>
     </section>
     <div class="spacer"></div>
@@ -211,10 +211,11 @@
           <li>1 LINE ID แจ้งได้หลายอุปกรณ์ (โครงสร้าง <code>one-to-many</code> + <code>user token</code>)</li>
           <li>ช่วยตรวจคำผิดด้วย AI</li>
           <li>คำนึงถึงความปลอดภัยของข้อมูลส่วนบุคคล</li>
+          <li>การเก็บข้อมูลเพื่อพัฒนาความเสถียร</li>
         </ul>
       </div>
       <div class="reveal">
-        <img src="image/home.png" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
+        <img src="image/robot_parallax.png" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
       </div>
     </section>
   </main>
