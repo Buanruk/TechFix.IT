@@ -213,8 +213,8 @@ $result = $stmt->get_result();
     }
     .select:hover{ transform:translateY(-1px); box-shadow:0 10px 22px rgba(10,37,64,.10) }
     .select:focus{ border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.18) }
-
-    /* ===== Table ===== */
+    
+    /* ===== Table (ปรับปรุง) ===== */
     .table-wrap{background:#fff;border-top:1px solid var(--line);overflow-x:auto}
     table{ width:100%; border-collapse:separate; border-spacing:0; font-size:14.5px;}
     thead th{position:sticky; top:0; z-index:2; background:linear-gradient(180deg,#f7fbff 0,#eef6ff 100%); color:#0f3a66; font-weight:800; letter-spacing:.2px; padding:14px 16px; border-bottom:1px solid var(--line); text-align:left;}
@@ -230,20 +230,21 @@ $result = $stmt->get_result();
     .badge.in_progress{background:#eef5ff;color:#0b63c8;border-color:#d6eaff}
     .badge.done{background:#e9f9ec;color:#2e7d32;border-color:#d1f3d8}
 
-    /* Select เปลี่ยนสถานะ & Buttons */
+    /* Select เปลี่ยนสถานะ & Buttons (ปรับปรุง) */
     .status-select{padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:700;cursor:pointer}
     .status-select:focus{border-color:#1e88e5;box-shadow:0 0 0 3px rgba(30,136,229,.15)}
     .select-new{color:var(--red)} .select-progress{color:#0b63c8} .select-done{color:#2e7d32}
     .btn-del, .btn-details{
         font-family:inherit; font-size:13px; font-weight:700; padding:6px 12px;
         border:1px solid var(--line); border-radius:10px; cursor:pointer;
-        transition:all .18s ease;
+        transition:all .18s ease; margin: 0;
     }
     .btn-del{ background:#fff; color:var(--red); }
     .btn-del:hover{ background:var(--red); color:#fff; border-color:var(--red); }
     .btn-details{ background:var(--blue); color:#fff; border-color:var(--blue); }
     .btn-details:hover{ background:#0b63c8; border-color:#0b63c8; }
-    .action-cell { display: flex; flex-direction:column; align-items:center; gap: 8px; }
+    .action-cell { display: flex; flex-direction:column; align-items:center; gap: 8px; justify-content:center; }
+    .action-cell form { margin: 0; }
 
     .empty{padding:28px;text-align:center;color:#667085}
 
@@ -344,16 +345,70 @@ $result = $stmt->get_result();
 </head>
 <body>
 
-<header class="site-header"></header>
+<header class="site-header">
+    <nav class="navbar">
+        <a class="brand" href="#">
+            <span class="brand-mark">🛠️</span>
+            <span>
+                <span class="brand-title">TechFix.it</span><br>
+                <small class="brand-sub">ระบบแจ้งซ่อมคอมพิวเตอร์</small>
+            </span>
+        </a>
+
+        <div class="nav-actions">
+            <button class="hb-btn" aria-label="เปิดเมนู" aria-expanded="false" onclick="toggleNavMenu(this)">
+                <span></span><span></span><span></span>
+            </button>
+            <div id="navMenu" class="nav-menu" role="menu" aria-hidden="true">
+                <a href="index.php" class="menu-item home" role="menuitem">
+                    <span class="menu-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg>
+                    </span>
+                    หน้าหลัก
+                </a>
+                <a href="logout.php" class="menu-item logout" role="menuitem">
+                    <span class="menu-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M15 12H3"></path><path d="M11 8l-4 4 4 4"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg>
+                    </span>
+                    ออกจากระบบ
+                </a>
+            </div>
+        </div>
+    </nav>
+</header>
 
 <div class="shell">
     <div class="container">
         <section class="panel">
             <header class="panel-head"><h1 class="title">รายการแจ้งซ่อมทั้งหมด</h1></header>
 
-            <div class="kpis"></div>
+            <div class="kpis">
+                <div class="kpi total"><h4>ทั้งหมด</h4><div class="num"><?= (int)$stat['all'] ?></div></div>
+                <div class="kpi new"><h4>แจ้งซ่อม</h4><div class="num"><?= (int)$stat['new'] ?></div></div>
+                <div class="kpi progress"><h4>กำลังซ่อม</h4><div class="num"><?= (int)$stat['in_progress'] ?></div></div>
+                <div class="kpi done"><h4>ซ่อมเสร็จ</h4><div class="num"><?= (int)$stat['done'] ?></div></div>
+            </div>
 
-            <form class="toolbar" method="get"></form>
+            <form class="toolbar" method="get">
+                <div class="group">
+                    <label class="label" for="dtype">กรองอุปกรณ์:</label>
+                    <select class="select" id="dtype" name="dtype" onchange="this.form.page.value=1; this.form.submit()">
+                        <?php foreach($dtypes as $slug=>$label): ?>
+                            <option value="<?= h($slug) ?>" <?= $filterDtype===$slug?'selected':'' ?>><?= h($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="group">
+                    <label class="label" for="status">กรองสถานะ:</label>
+                    <select class="select" id="status" name="status" onchange="this.form.page.value=1; this.form.submit()">
+                        <option value="all"         <?= $filterStatus==='all' ? 'selected' : '' ?>>ทั้งหมด</option>
+                        <option value="new"         <?= $filterStatus==='new' ? 'selected' : '' ?>>❌ แจ้งซ่อม</option>
+                        <option value="in_progress" <?= $filterStatus==='in_progress' ? 'selected' : '' ?>>🔧 กำลังซ่อม</option>
+                        <option value="done"        <?= $filterStatus==='done' ? 'selected' : '' ?>>✅ ซ่อมเสร็จ</option>
+                    </select>
+                </div>
+                <input type="hidden" name="page" value="<?= (int)$page ?>">
+            </form>
 
             <div class="table-wrap">
                 <table>
@@ -381,11 +436,11 @@ $result = $stmt->get_result();
                             <?php
                                 $room = $row['room'] ?? ($row['floor'] ?? '');
                                 $s = in_array($row['status'], ['new','in_progress','done']) ? $row['status'] : 'new';
-                                $selectClass = $s==='new' ? 'select-new' : ($s==='in_progress' ? 'select-progress' : 'select-done');
                                 $reportTime = h(@date('d/m/Y H:i', strtotime($row['report_date'])) ?: $row['report_date']);
                             ?>
                             <tr
                                 data-queue="<?= h($row['queue_number']) ?>"
+                                data-username="<?= h($row['username']) ?>"
                                 data-device="<?= h($row['device_type']) ?>"
                                 data-serial="<?= h($row['serial_number']) ?>"
                                 data-room="<?= h($room) ?>"
@@ -403,10 +458,10 @@ $result = $stmt->get_result();
                                         <form method="POST" action="/update_status.php">
                                             <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                                             <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
-                                            <select name="status" class="status-select <?= $selectClass ?>" onchange="this.form.submit()">
-                                                <option value="new"         <?= $s==='new'?'selected':'' ?>>❌ แจ้งซ่อม</option>
-                                                <option value="in_progress" <?= $s==='in_progress'?'selected':'' ?>>🔧 กำลังซ่อม</option>
-                                                <option value="done"        <?= $s==='done'?'selected':'' ?>>✅ ซ่อมเสร็จ</option>
+                                            <select name="status" class="status-select" onchange="this.form.submit()">
+                                                <option value="new"         <?= $s==='new'?'selected':'' ?> class="select-new">❌ แจ้งซ่อม</option>
+                                                <option value="in_progress" <?= $s==='in_progress'?'selected':'' ?> class="select-progress">🔧 กำลังซ่อม</option>
+                                                <option value="done"        <?= $s==='done'?'selected':'' ?> class="select-done">✅ ซ่อมเสร็จ</option>
                                             </select>
                                         </form>
                                         <form method="POST" action="/delete_report.php"
@@ -427,7 +482,30 @@ $result = $stmt->get_result();
                 </table>
             </div>
 
-            <nav class="pager" aria-label="เปลี่ยนหน้า"></nav>
+            <nav class="pager" aria-label="เปลี่ยนหน้า">
+                <?php $prev = $page - 1; $next = $page + 1; ?>
+                <a class="<?= $page<=1 ? 'disabled':'' ?>" href="<?= $page<=1 ? '#' : h(pageUrl($prev,$filterStatus,$filterDtype)) ?>" aria-label="ก่อนหน้า">«</a>
+                <?php
+                    $window = 2;
+                    $start = max(1, $page - $window);
+                    $end   = min($totalPages, $page + $window);
+
+                    if ($start > 1){
+                        echo '<a href="'.h(pageUrl(1,$filterStatus,$filterDtype)).'">1</a>';
+                        if ($start > 2) echo '<span class="disabled">…</span>';
+                    }
+                    for($p=$start; $p<=$end; $p++){
+                        if ($p == $page) echo '<span class="active">'.$p.'</span>';
+                        else echo '<a href="'.h(pageUrl($p,$filterStatus,$filterDtype)).'">'.$p.'</a>';
+                    }
+                    if ($end < $totalPages){
+                        if ($end < $totalPages-1) echo '<span class="disabled">…</span>';
+                        echo '<a href="'.h(pageUrl($totalPages,$filterStatus,$filterDtype)).'">'.$totalPages.'</a>';
+                    }
+                ?>
+                <a class="<?= $page>=$totalPages ? 'disabled':'' ?>" href="<?= $page>=$totalPages ? '#' : h(pageUrl($next,$filterStatus,$filterDtype)) ?>" aria-label="ถัดไป">»</a>
+                <span class="disabled" style="border:none">หน้า <?= $page ?> / <?= $totalPages ?> • ทั้งหมด <?= number_format($totalRows) ?> รายการ</span>
+            </nav>
 
         </section>
 
@@ -452,9 +530,33 @@ $result = $stmt->get_result();
 
 <script>
 // ===== Script สำหรับเมนู (ของเดิม) =====
-function toggleNavMenu(btn){ /* ... code เดิม ... */ }
-document.addEventListener('click', (e)=>{ /* ... code เดิม ... */ });
-document.addEventListener('keydown',(e)=>{ /* ... code เดิม ... */ });
+function toggleNavMenu(btn){
+    const menu = document.getElementById('navMenu');
+    const show = !menu.classList.contains('show');
+    menu.classList.toggle('show', show);
+    btn.classList.toggle('active', show);
+    btn.setAttribute('aria-expanded', show ? 'true' : 'false');
+    menu.setAttribute('aria-hidden', show ? 'false' : 'true');
+}
+document.addEventListener('click', (e)=>{
+    const menu = document.getElementById('navMenu');
+    const btn = document.querySelector('.hb-btn');
+    if (!menu) return;
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+        menu.classList.remove('show'); btn.classList.remove('active');
+        btn.setAttribute('aria-expanded','false'); menu.setAttribute('aria-hidden','true');
+    }
+});
+document.addEventListener('keydown',(e)=>{
+    if(e.key === 'Escape'){
+        const menu = document.getElementById('navMenu');
+        const btn = document.querySelector('.hb-btn');
+        if(menu && menu.classList.contains('show')){
+            menu.classList.remove('show'); btn.classList.remove('active');
+            btn.setAttribute('aria-expanded','false'); menu.setAttribute('aria-hidden','true');
+        }
+    }
+});
 
 // ===== Script สำหรับ Modal (ส่วนที่เพิ่มใหม่) =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -465,14 +567,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ฟังก์ชันเปิด Modal
     const openModal = (data) => {
-        modalTitle.textContent = `รายละเอียดคิว: ${data.queue}`;
+        modalTitle.textContent = `รายละเอียดคิว: ${data.queue} (คุณ ${data.username})`;
         modalBody.innerHTML = `
             <span class="label">อุปกรณ์:</span><span class="value">${data.device || '-'}</span>
             <span class="label">หมายเลขเครื่อง:</span><span class="value">${data.serial || '-'}</span>
             <span class="label">ห้อง/ชั้น:</span><span class="value">${data.room || '-'}</span>
             <span class="label">เบอร์โทร:</span><span class="value">${data.phone || '-'}</span>
             <span class="label">เวลาแจ้ง:</span><span class="value">${data.time || '-'}</span>
-            <span class="label">ปัญหาที่แจ้ง:</span><span class="value" style="grid-column: 1 / -1; margin-top: -10px; background: #f5f9ff; padding: 10px; border-radius: 8px;">${data.issue || '-'}</span>
+            <span class="label" style="grid-column: 1 / -1; margin-top: 8px;"><b>ปัญหาที่แจ้ง:</b></span>
+            <span class="value" style="grid-column: 1 / -1; margin-top: -10px; background: #f5f9ff; padding: 10px; border-radius: 8px;">${data.issue || '-'}</span>
         `;
         modalOverlay.classList.add('show');
     };
@@ -492,6 +595,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // ดึงข้อมูลจาก data-attributes ของแถวนั้นๆ
                 const reportData = {
                     queue: row.dataset.queue,
+                    username: row.dataset.username,
                     device: row.dataset.device,
                     serial: row.dataset.serial,
                     room: row.dataset.room,
@@ -520,5 +624,45 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<style>
+    .live-notice{
+        position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+        background: #0b63c8; color: #fff; padding: 10px 14px; border-radius: 12px;
+        box-shadow: 0 10px 24px rgba(15,40,80,.25); font-weight: 800;
+        display: none; z-index: 2000;
+    }
+</style>
+
+<div id="liveNotice" class="live-notice" role="status" aria-live="polite">
+    มีการอัปเดตใหม่ กำลังโหลดข้อมูล...
+</div>
+
+<script>
+    const PING_URL = 'changes_ping.php';
+    const POLL_MS  = 5000;
+    let lastSig = null;
+
+    async function pingChanges() {
+        try {
+            const res = await fetch(PING_URL, { cache: 'no-store' });
+            if (!res.ok) return;
+            const j = await res.json();
+            if (!j || !j.sig) return;
+
+            if (lastSig === null) { lastSig = j.sig; return; }
+            if (j.sig !== lastSig) {
+                lastSig = j.sig;
+                const n = document.getElementById('liveNotice');
+                if (n) n.style.display = 'inline-flex';
+                setTimeout(() => location.reload(), 800);
+            }
+        } catch (e) {}
+    }
+    let pollTimer = setInterval(pingChanges, POLL_MS);
+    window.addEventListener('load', pingChanges);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') pingChanges();
+    });
+</script>
 </body>
 </html>
