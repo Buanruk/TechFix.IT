@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['technic
     if (!empty($technicianName) && !empty($line_user_id)) {
         
         // จัดรูปแบบข้อความตามที่ฟังก์ชัน line_push() ต้องการ
-        $messageText = "คิว {$queueNumber} ของคุณ\nมอบหมายให้ช่าง: {$technicianName}\nสถานะ: กำลังดำเนินการซ่อม";
+        $messageText = "คิว {$queueNumber} ของคุณ\nรับการซ่อมโดยช่าง: {$technicianName}\nสถานะ: กำลังดำเนินการซ่อม";
         
         $messages = [
             [
