@@ -1,21 +1,14 @@
 <?php
-// assign_technician.php
+// assign_technician.php (เวอร์ชันสำหรับตรวจสอบปัญหา)
 
-// ===== เคล็ดลับ: หากเจอหน้าขาว หรือ Error 500 อีกในอนาคต =====
-// ลองเปิด 3 บรรทัดข้างล่างนี้ (ลบเครื่องหมาย // ข้างหน้าออก)
-// เพื่อให้ PHP แสดงข้อผิดพลาดออกมาบนจอ จะได้แก้ไขได้ง่ายขึ้นครับ
-// ini_set('display_errors', 1);
-// ini_set('display_startup_errors', 1);
-// error_reporting(E_ALL);
+// เปิดการแสดงผล Error เพื่อช่วยในการตรวจสอบ (ควรปิดหลังจากแก้ไขปัญหาเสร็จ)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 
-// ===== ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ =====
-// ===== กรุณากรอก LINE NOTIFY ACCESS TOKEN ของคุณที่นี่ =====
-// =====                                                         =====
-// VVVV จุดที่ 1 ที่แก้ไข: เพิ่ม 'LINE_NOTIFY_TOKEN', เข้าไปข้างหน้า VVVV
+// ===== กรุณาตรวจสอบว่า LINE NOTIFY ACCESS TOKEN ของคุณถูกต้อง 100% =====
 define('LINE_NOTIFY_TOKEN', '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU=');
-// =====                                                         =====
-// ===== ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ =====
 
 
 /**
@@ -24,9 +17,10 @@ define('LINE_NOTIFY_TOKEN', '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLv
  * @return void
  */
 function sendLineNotify($message) {
-    // VVVV จุดที่ 2 ที่แก้ไข: เปลี่ยนเงื่อนไขกลับเป็นแบบเดิมที่ถูกต้อง VVVV
     if (!defined('LINE_NOTIFY_TOKEN') || LINE_NOTIFY_TOKEN === 'YOUR_LINE_NOTIFY_ACCESS_TOKEN' || empty(LINE_NOTIFY_TOKEN)) {
-        return; // ไม่ต้องทำอะไรถ้ายังไม่ได้ตั้งค่า Token
+        // บันทึก Log ว่า Token ไม่ได้ตั้งค่า
+        file_put_contents('line_notify_error.log', date('[Y-m-d H:i:s]') . " Error: LINE Notify Token is not configured." . PHP_EOL, FILE_APPEND);
+        return;
     }
 
     $url = 'https://notify-api.line.me/api/notify';
@@ -42,29 +36,41 @@ function sendLineNotify($message) {
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    // เพิ่มการตั้งค่าสำหรับ SSL (อาจจำเป็นสำหรับบางโฮสต์)
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10); // ตั้งเวลา Timeout
 
     $result = curl_exec($ch);
+
+    // ===== ส่วนตรวจสอบ Error ที่เพิ่มเข้ามา =====
+    if (curl_errno($ch)) {
+        $error_message = date('[Y-m-d H:i:s]') . ' cURL Error: ' . curl_error($ch);
+        // บันทึก Error ลงในไฟล์ line_notify_error.log
+        file_put_contents('line_notify_error.log', $error_message . PHP_EOL, FILE_APPEND);
+    } else {
+        // ตรวจสอบ HTTP Status Code จาก LINE
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($http_code != 200) {
+            $error_message = date('[Y-m-d H:i:s]') . " LINE Notify API Error: HTTP Status Code " . $http_code . ". Response: " . $result;
+            file_put_contents('line_notify_error.log', $error_message . PHP_EOL, FILE_APPEND);
+        }
+    }
+    // =======================================
+    
     curl_close($ch);
-    // สามารถ log $result เพื่อตรวจสอบการทำงานได้หากต้องการ
 }
 
-// ตรวจสอบว่าเป็นการส่งข้อมูลมาแบบ POST และมีข้อมูลครบถ้วน
+
+// --- ส่วนที่เหลือของไฟล์เหมือนเดิม ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['technician'])) {
 
-    // เชื่อมต่อฐานข้อมูล
     $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
-    if ($conn->connect_error) {
-        die("DB Error");
-    }
+    if ($conn->connect_error) { die("DB Error"); }
     $conn->set_charset("utf8");
 
     $reportId = (int)$_POST['id'];
     $technicianName = trim($_POST['technician']);
 
-    // อัปเดตฐานข้อมูล: เปลี่ยนสถานะเป็น 'กำลังซ่อม' และบันทึกชื่อช่าง
     $updateSql = "UPDATE device_reports SET status = 'in_progress', assigned_technician = ? WHERE id = ?";
     $stmt = $conn->prepare($updateSql);
     if ($stmt) {
@@ -73,7 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['technic
         $stmt->close();
     }
 
-    // ดึงข้อมูลคิวเพื่อใช้ในการแจ้งเตือน
     $queueNumber = 'N/A';
     $qStmt = $conn->prepare("SELECT queue_number FROM device_reports WHERE id = ?");
     if ($qStmt) {
@@ -88,19 +93,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['technic
 
     $conn->close();
 
-    // สร้างข้อความและส่งแจ้งเตือน
     if (!empty($technicianName)) {
         $message = "คิว {$queueNumber} มอบหมายให้ช่าง: {$technicianName} (กำลังดำเนินการซ่อม)";
         sendLineNotify($message);
     }
     
-    // กลับไปยังหน้าเดิม
     $redirectUrl = $_POST['redirect'] ?? 'admin_dashboard.php';
+    $cacheBuster = (strpos($redirectUrl, '?') === false) ? '?' : '&';
+    $redirectUrl .= $cacheBuster . 't=' . time();
+
     header('Location: ' . $redirectUrl);
     exit();
 
 } else {
-    // ถ้าไม่มีข้อมูลส่งมา ให้กลับไปหน้าหลัก
     header('Location: admin_dashboard.php');
     exit();
 }
