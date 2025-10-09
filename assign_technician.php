@@ -1,10 +1,19 @@
 <?php
 // assign_technician.php
 
+// ===== เคล็ดลับ: หากเจอหน้าขาว หรือ Error 500 อีกในอนาคต =====
+// ลองเปิด 3 บรรทัดข้างล่างนี้ (ลบเครื่องหมาย // ข้างหน้าออก)
+// เพื่อให้ PHP แสดงข้อผิดพลาดออกมาบนจอ จะได้แก้ไขได้ง่ายขึ้นครับ
+// ini_set('display_errors', 1);
+// ini_set('display_startup_errors', 1);
+// error_reporting(E_ALL);
+
+
 // ===== ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ =====
 // ===== กรุณากรอก LINE NOTIFY ACCESS TOKEN ของคุณที่นี่ =====
 // =====                                                         =====
-define('7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU=');
+// VVVV จุดที่ 1 ที่แก้ไข: เพิ่ม 'LINE_NOTIFY_TOKEN', เข้าไปข้างหน้า VVVV
+define('LINE_NOTIFY_TOKEN', '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU=');
 // =====                                                         =====
 // ===== ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ =====
 
@@ -15,7 +24,8 @@ define('7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/Hvp
  * @return void
  */
 function sendLineNotify($message) {
-    if (!defined('LINE_NOTIFY_TOKEN') || LINE_NOTIFY_TOKEN === '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU=') {
+    // VVVV จุดที่ 2 ที่แก้ไข: เปลี่ยนเงื่อนไขกลับเป็นแบบเดิมที่ถูกต้อง VVVV
+    if (!defined('LINE_NOTIFY_TOKEN') || LINE_NOTIFY_TOKEN === 'YOUR_LINE_NOTIFY_ACCESS_TOKEN' || empty(LINE_NOTIFY_TOKEN)) {
         return; // ไม่ต้องทำอะไรถ้ายังไม่ได้ตั้งค่า Token
     }
 
@@ -79,9 +89,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['technic
     $conn->close();
 
     // สร้างข้อความและส่งแจ้งเตือน
-    $message = "คิว {$queueNumber} มอบหมายให้ช่าง: {$technicianName} (กำลังดำเนินการซ่อม)";
-    sendLineNotify($message);
-
+    if (!empty($technicianName)) {
+        $message = "คิว {$queueNumber} มอบหมายให้ช่าง: {$technicianName} (กำลังดำเนินการซ่อม)";
+        sendLineNotify($message);
+    }
+    
     // กลับไปยังหน้าเดิม
     $redirectUrl = $_POST['redirect'] ?? 'admin_dashboard.php';
     header('Location: ' . $redirectUrl);
