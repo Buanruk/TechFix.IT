@@ -1,13 +1,7 @@
 <?php
-// assign_technician.php (เวอร์ชันสำหรับตรวจสอบปัญหา)
+// assign_technician.php
 
-// เปิดการแสดงผล Error เพื่อช่วยในการตรวจสอบ (ควรปิดหลังจากแก้ไขปัญหาเสร็จ)
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-
-// ===== กรุณาตรวจสอบว่า LINE NOTIFY ACCESS TOKEN ของคุณถูกต้อง 100% =====
+// ===== กรุณาตรวจสอบว่า LINE NOTIFY ACCESS TOKEN ของคุณถูกต้อง =====
 define('LINE_NOTIFY_TOKEN', '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU=');
 
 
@@ -18,12 +12,12 @@ define('LINE_NOTIFY_TOKEN', '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLv
  */
 function sendLineNotify($message) {
     if (!defined('LINE_NOTIFY_TOKEN') || LINE_NOTIFY_TOKEN === 'YOUR_LINE_NOTIFY_ACCESS_TOKEN' || empty(LINE_NOTIFY_TOKEN)) {
-        // บันทึก Log ว่า Token ไม่ได้ตั้งค่า
-        file_put_contents('line_notify_error.log', date('[Y-m-d H:i:s]') . " Error: LINE Notify Token is not configured." . PHP_EOL, FILE_APPEND);
-        return;
+        return; // ไม่ต้องทำอะไรถ้ายังไม่ได้ตั้งค่า Token
     }
 
+    // URL ที่ถูกต้องและสะอาด
     $url = 'https://notify-api.line.me/api/notify';
+    
     $headers = [
         'Content-Type: application/x-www-form-urlencoded',
         'Authorization: Bearer ' . LINE_NOTIFY_TOKEN,
@@ -38,32 +32,16 @@ function sendLineNotify($message) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10); // ตั้งเวลา Timeout
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 
-    $result = curl_exec($ch);
-
-    // ===== ส่วนตรวจสอบ Error ที่เพิ่มเข้ามา =====
-    if (curl_errno($ch)) {
-        $error_message = date('[Y-m-d H:i:s]') . ' cURL Error: ' . curl_error($ch);
-        // บันทึก Error ลงในไฟล์ line_notify_error.log
-        file_put_contents('line_notify_error.log', $error_message . PHP_EOL, FILE_APPEND);
-    } else {
-        // ตรวจสอบ HTTP Status Code จาก LINE
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        if ($http_code != 200) {
-            $error_message = date('[Y-m-d H:i:s]') . " LINE Notify API Error: HTTP Status Code " . $http_code . ". Response: " . $result;
-            file_put_contents('line_notify_error.log', $error_message . PHP_EOL, FILE_APPEND);
-        }
-    }
-    // =======================================
-    
+    curl_exec($ch);
     curl_close($ch);
 }
 
-
-// --- ส่วนที่เหลือของไฟล์เหมือนเดิม ---
+// ตรวจสอบว่าเป็นการส่งข้อมูลมาแบบ POST และมีข้อมูลครบถ้วน
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['technician'])) {
 
+    // เชื่อมต่อฐานข้อมูล
     $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
     if ($conn->connect_error) { die("DB Error"); }
     $conn->set_charset("utf8");
@@ -71,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['technic
     $reportId = (int)$_POST['id'];
     $technicianName = trim($_POST['technician']);
 
+    // อัปเดตฐานข้อมูล
     $updateSql = "UPDATE device_reports SET status = 'in_progress', assigned_technician = ? WHERE id = ?";
     $stmt = $conn->prepare($updateSql);
     if ($stmt) {
@@ -79,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['technic
         $stmt->close();
     }
 
+    // ดึงข้อมูลคิวเพื่อใช้ในการแจ้งเตือน
     $queueNumber = 'N/A';
     $qStmt = $conn->prepare("SELECT queue_number FROM device_reports WHERE id = ?");
     if ($qStmt) {
@@ -93,11 +73,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['technic
 
     $conn->close();
 
+    // สร้างข้อความและส่งแจ้งเตือน
     if (!empty($technicianName)) {
         $message = "คิว {$queueNumber} มอบหมายให้ช่าง: {$technicianName} (กำลังดำเนินการซ่อม)";
         sendLineNotify($message);
     }
     
+    // กลับไปยังหน้าเดิม (พร้อม Cache Buster)
     $redirectUrl = $_POST['redirect'] ?? 'admin_dashboard.php';
     $cacheBuster = (strpos($redirectUrl, '?') === false) ? '?' : '&';
     $redirectUrl .= $cacheBuster . 't=' . time();
@@ -106,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'], $_POST['technic
     exit();
 
 } else {
+    // ถ้าไม่มีข้อมูลส่งมา ให้กลับไปหน้าหลัก
     header('Location: admin_dashboard.php');
     exit();
 }
