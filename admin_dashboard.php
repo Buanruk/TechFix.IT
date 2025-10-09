@@ -4,6 +4,14 @@ $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
 if ($conn->connect_error) { die("DB Error"); }
 $conn->set_charset("utf8");
 
+// ===== ส่วนที่เพิ่มใหม่: รายชื่อช่าง =====
+$technicians = [
+    'พีรพัฒน์',
+    'ปิยังกูล',
+    'อิทธิพล',
+];
+// ===================================
+
 // ===== Map ประเภทอุปกรณ์ (slug -> label แสดงผล) และ regex จับคำใน device_type =====
 $dtypes = [
     'all'     => 'อุปกรณ์ทั้งหมด',
@@ -214,15 +222,15 @@ $result = $stmt->get_result();
     .select:hover{ transform:translateY(-1px); box-shadow:0 10px 22px rgba(10,37,64,.10) }
     .select:focus{ border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.18) }
     
-    /* ===== Table (ปรับปรุง) ===== */
+    /* ===== Table ===== */
     .table-wrap{background:#fff;border-top:1px solid var(--line);overflow-x:auto}
     table{ width:100%; border-collapse:separate; border-spacing:0; font-size:14.5px;}
     thead th{position:sticky; top:0; z-index:2; background:linear-gradient(180deg,#f7fbff 0,#eef6ff 100%); color:#0f3a66; font-weight:800; letter-spacing:.2px; padding:14px 16px; border-bottom:1px solid var(--line); text-align:left;}
-    tbody td{padding:14px 16px; border-top:1px solid var(--line); vertical-align:middle; background:#fff;}
+    tbody td{padding:12px 16px; border-top:1px solid var(--line); vertical-align:middle; background:#fff;}
     tbody tr:nth-child(even) td{background:#fbfdff}
     tbody tr:hover td{background:#f3f8ff}
     .tc{text-align:center}
-    .ellipsis{max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    .ellipsis{max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 
     /* Badge */
     .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-size:13px;font-weight:800;border:1px solid transparent}
@@ -230,8 +238,8 @@ $result = $stmt->get_result();
     .badge.in_progress{background:#eef5ff;color:#0b63c8;border-color:#d6eaff}
     .badge.done{background:#e9f9ec;color:#2e7d32;border-color:#d1f3d8}
 
-    /* Select เปลี่ยนสถานะ & Buttons (ปรับปรุง) */
-    .status-select{padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:700;cursor:pointer}
+    /* Select & Buttons */
+    .status-select{padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:700;cursor:pointer; max-width: 150px;}
     .status-select:focus{border-color:#1e88e5;box-shadow:0 0 0 3px rgba(30,136,229,.15)}
     .select-new{color:var(--red)} .select-progress{color:#0b63c8} .select-done{color:#2e7d32}
     .btn-del, .btn-details{
@@ -245,7 +253,6 @@ $result = $stmt->get_result();
     .btn-details:hover{ background:#0b63c8; border-color:#0b63c8; }
     .action-cell { display: flex; flex-direction:column; align-items:center; gap: 8px; justify-content:center; }
     .action-cell form { margin: 0; }
-
     .empty{padding:28px;text-align:center;color:#667085}
 
     /* ===== Pagination ===== */
@@ -266,8 +273,8 @@ $result = $stmt->get_result();
     .pager .disabled{opacity:.45; pointer-events:none}
 
     /* ===== มือถือ ===== */
-    @media (max-width:768px){
-        thead{display:none} /* ซ่อนหัวตารางในมือถือ */
+    @media (max-width:960px){
+        thead{display:none} 
         tbody tr{
             display:block;
             border:1px solid var(--line); border-radius:14px;
@@ -290,7 +297,7 @@ $result = $stmt->get_result();
         .action-cell{ flex-direction:row; justify-content:center; }
     }
 
-    /* ===== สไตล์สำหรับ Modal (ส่วนที่เพิ่มใหม่) ===== */
+    /* ===== สไตล์สำหรับ Modal ===== */
     .modal-overlay {
         position: fixed; top: 0; left: 0;
         width: 100%; height: 100%;
@@ -301,9 +308,7 @@ $result = $stmt->get_result();
         opacity: 0; pointer-events: none;
         transition: opacity 0.25s ease;
     }
-    .modal-overlay.show {
-        opacity: 1; pointer-events: auto;
-    }
+    .modal-overlay.show { opacity: 1; pointer-events: auto; }
     .modal-content {
         background: #fff;
         border-radius: var(--radius);
@@ -314,9 +319,7 @@ $result = $stmt->get_result();
         transform: scale(0.95);
         transition: transform 0.25s ease;
     }
-    .modal-overlay.show .modal-content {
-        transform: scale(1);
-    }
+    .modal-overlay.show .modal-content { transform: scale(1); }
     .modal-header {
         display: flex; justify-content: space-between; align-items: center;
         padding: 16px 22px;
@@ -334,13 +337,8 @@ $result = $stmt->get_result();
         grid-template-columns: 150px 1fr;
         gap: 14px;
     }
-    .modal-body .label {
-        font-weight: 800; color: var(--navy);
-    }
-    .modal-body .value {
-        word-break: break-word;
-        white-space: pre-wrap; /* ทำให้ข้อความยาวๆ ขึ้นบรรทัดใหม่ */
-    }
+    .modal-body .label { font-weight: 800; color: var(--navy); }
+    .modal-body .value { word-break: break-word; white-space: pre-wrap; }
 </style>
 </head>
 <body>
@@ -354,7 +352,6 @@ $result = $stmt->get_result();
                 <small class="brand-sub">ระบบแจ้งซ่อมคอมพิวเตอร์</small>
             </span>
         </a>
-
         <div class="nav-actions">
             <button class="hb-btn" aria-label="เปิดเมนู" aria-expanded="false" onclick="toggleNavMenu(this)">
                 <span></span><span></span><span></span>
@@ -381,14 +378,12 @@ $result = $stmt->get_result();
     <div class="container">
         <section class="panel">
             <header class="panel-head"><h1 class="title">รายการแจ้งซ่อมทั้งหมด</h1></header>
-
             <div class="kpis">
                 <div class="kpi total"><h4>ทั้งหมด</h4><div class="num"><?= (int)$stat['all'] ?></div></div>
                 <div class="kpi new"><h4>แจ้งซ่อม</h4><div class="num"><?= (int)$stat['new'] ?></div></div>
                 <div class="kpi progress"><h4>กำลังซ่อม</h4><div class="num"><?= (int)$stat['in_progress'] ?></div></div>
                 <div class="kpi done"><h4>ซ่อมเสร็จ</h4><div class="num"><?= (int)$stat['done'] ?></div></div>
             </div>
-
             <form class="toolbar" method="get">
                 <div class="group">
                     <label class="label" for="dtype">กรองอุปกรณ์:</label>
@@ -414,9 +409,10 @@ $result = $stmt->get_result();
                 <table>
                     <colgroup>
                         <col style="width: 8%;">
-                        <col style="width: 25%;">
-                        <col style="width: 18%;">
-                        <col style="width: 27%;">
+                        <col style="width: 20%;">
+                        <col style="width: 15%;">
+                        <col style="width: 20%;">
+                        <col style="width: 15%;">
                         <col style="width: 22%;">
                     </colgroup>
                     <thead>
@@ -426,17 +422,18 @@ $result = $stmt->get_result();
                             <th class="tc">สถานะ</th>
                             <th class="tc">เปลี่ยนสถานะ / ลบ</th>
                             <th class="tc">รายละเอียด</th>
-                        </tr>
+                            <th class="tc">มอบหมายช่าง</th></tr>
                     </thead>
                     <tbody>
                     <?php if ($result->num_rows === 0): ?>
-                        <tr><td colspan="5" class="empty">ยังไม่มีรายการตามเงื่อนไขที่เลือก</td></tr>
+                        <tr><td colspan="6" class="empty">ยังไม่มีรายการตามเงื่อนไขที่เลือก</td></tr>
                     <?php else: ?>
                         <?php while($row = $result->fetch_assoc()): ?>
                             <?php
                                 $room = $row['room'] ?? ($row['floor'] ?? '');
                                 $s = in_array($row['status'], ['new','in_progress','done']) ? $row['status'] : 'new';
                                 $reportTime = h(@date('d/m/Y H:i', strtotime($row['report_date'])) ?: $row['report_date']);
+                                $assignedTech = $row['assigned_technician'] ?? null; // ดึงชื่อช่างที่ถูกมอบหมาย
                             ?>
                             <tr
                                 data-queue="<?= h($row['queue_number']) ?>"
@@ -452,6 +449,9 @@ $result = $stmt->get_result();
                                 <td class="ellipsis" data-label="ชื่อผู้แจ้ง" title="<?= h($row['username']) ?>"><?= h($row['username']) ?></td>
                                 <td class="tc" data-label="สถานะ">
                                     <span class="badge <?= $s ?>"><?= statusIcon($s) ?> <?= h(statusText($s)) ?></span>
+                                    <?php if (!empty($assignedTech)): ?>
+                                        <div style="font-size:12px; color:#555; margin-top:4px;">(ช่าง: <?= h($assignedTech) ?>)</div>
+                                    <?php endif; ?>
                                 </td>
                                 <td data-label="จัดการ">
                                     <div class="action-cell">
@@ -474,6 +474,20 @@ $result = $stmt->get_result();
                                 </td>
                                 <td class="tc" data-label="รายละเอียด">
                                     <button class="btn-details">รายละเอียดเพิ่มเติม</button>
+                                </td>
+                                <td class="tc" data-label="มอบหมายช่าง">
+                                     <form method="POST" action="assign_technician.php">
+                                        <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                                        <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+                                        <select name="technician" class="status-select" onchange="if(this.value) this.form.submit()">
+                                            <option value="">-- เลือกช่าง --</option>
+                                            <?php foreach ($technicians as $tech): ?>
+                                                <option value="<?= h($tech) ?>" <?= ($assignedTech === $tech) ? 'selected' : '' ?>>
+                                                    <?= h($tech) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
@@ -558,7 +572,7 @@ document.addEventListener('keydown',(e)=>{
     }
 });
 
-// ===== Script สำหรับ Modal (ส่วนที่เพิ่มใหม่) =====
+// ===== Script สำหรับ Modal (ของเดิม) =====
 document.addEventListener('DOMContentLoaded', () => {
     const modalOverlay = document.getElementById('detailsModal');
     const modalBody = document.getElementById('modalBody');
