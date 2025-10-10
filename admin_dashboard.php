@@ -4,13 +4,16 @@ $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
 if ($conn->connect_error) { die("DB Error"); }
 $conn->set_charset("utf8");
 
-// ===== ส่วนที่เพิ่มใหม่: รายชื่อช่าง =====
-$technicians = [
-    'พีรพัฒน์',
-    'ปิยังกูร',
-    'อิทธิพล',
-];
-// ===================================
+// ===== ส่วนที่แก้ไข: ดึงรายชื่อช่างจากฐานข้อมูล =====
+$technician_list = [];
+$tech_sql = "SELECT id, fullname FROM technicians ORDER BY fullname ASC";
+$tech_result = $conn->query($tech_sql);
+if ($tech_result && $tech_result->num_rows > 0) {
+    while($tech_row = $tech_result->fetch_assoc()) {
+        $technician_list[] = $tech_row;
+    }
+}
+// ===============================================
 
 // ===== Map ประเภทอุปกรณ์ (slug -> label แสดงผล) และ regex จับคำใน device_type =====
 $dtypes = [
@@ -476,18 +479,18 @@ $result = $stmt->get_result();
                                     <button class="btn-details">รายละเอียดเพิ่มเติม</button>
                                 </td>
                                 <td class="tc" data-label="มอบหมายช่าง">
-                                     <form method="POST" action="assign_technician.php">
-                                        <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-                                        <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
-                                        <select name="technician" class="status-select" onchange="if(this.value) this.form.submit()">
+                                            <form method="POST" action="assign_technician.php">
+                                            <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                                            <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+                                            <select name="technician" class="status-select" onchange="if(this.value) this.form.submit()">
                                             <option value="">-- เลือกช่าง --</option>
                                             <?php foreach ($technicians as $tech): ?>
-                                                <option value="<?= h($tech) ?>" <?= ($assignedTech === $tech) ? 'selected' : '' ?>>
-                                                    <?= h($tech) ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </form>
+                                            <option value="<?= h($tech) ?>" <?= ($assignedTech === $tech) ? 'selected' : '' ?>>
+                                            <?= h($tech) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                </form>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
