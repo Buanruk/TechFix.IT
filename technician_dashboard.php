@@ -403,6 +403,33 @@ $result = $stmt->get_result();
 </div>
 
 <script>
+    const PING_URL = 'changes_ping.php';
+    const POLL_MS  = 5000;
+    let lastSig = null;
+
+    async function pingChanges() {
+        try {
+            const res = await fetch(PING_URL, { cache: 'no-store' });
+            if (!res.ok) return;
+            const j = await res.json();
+            if (!j || !j.sig) return;
+
+            if (lastSig === null) { lastSig = j.sig; return; }
+            if (j.sig !== lastSig) {
+                lastSig = j.sig;
+                const n = document.getElementById('liveNotice');
+                if (n) n.style.display = 'inline-flex';
+                setTimeout(() => location.reload(), 800);
+            }
+        } catch (e) {}
+    }
+    let pollTimer = setInterval(pingChanges, POLL_MS);
+    window.addEventListener('load', pingChanges);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') pingChanges();
+    });
+
+<script>
 function toggleNavMenu(btn){const menu=document.getElementById('navMenu');const show=!menu.classList.contains('show');menu.classList.toggle('show',show);btn.classList.toggle('active',show);btn.setAttribute('aria-expanded',show?'true':'false');menu.setAttribute('aria-hidden',show?'false':'true')}
 document.addEventListener('click',e=>{const menu=document.getElementById('navMenu');const btn=document.querySelector('.hb-btn');if(!menu)return;if(!menu.contains(e.target)&&!btn.contains(e.target)){menu.classList.remove('show');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const menu=document.getElementById('navMenu');const btn=document.querySelector('.hb-btn');if(menu&&menu.classList.contains('show')){menu.classList.remove('show');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}}});
