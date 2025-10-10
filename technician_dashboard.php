@@ -401,6 +401,18 @@ $result = $stmt->get_result();
 <div id="liveNotice" class="live-notice" role="status" aria-live="polite">
     มีการอัปเดตใหม่ กำลังโหลดข้อมูล...
 </div>
+<style>
+    .live-notice{
+        position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+        background: #0b63c8; color: #fff; padding: 10px 14px; border-radius: 12px;
+        box-shadow: 0 10px 24px rgba(15,40,80,.25); font-weight: 800;
+        display: none; z-index: 2000;
+    }
+</style>
+
+<div id="liveNotice" class="live-notice" role="status" aria-live="polite">
+    มีการอัปเดตใหม่ กำลังโหลดข้อมูล...
+</div>
 
 <script>
     const PING_URL = 'changes_ping.php';
@@ -428,7 +440,7 @@ $result = $stmt->get_result();
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') pingChanges();
     });
-
+    
 <script>
 function toggleNavMenu(btn){const menu=document.getElementById('navMenu');const show=!menu.classList.contains('show');menu.classList.toggle('show',show);btn.classList.toggle('active',show);btn.setAttribute('aria-expanded',show?'true':'false');menu.setAttribute('aria-hidden',show?'false':'true')}
 document.addEventListener('click',e=>{const menu=document.getElementById('navMenu');const btn=document.querySelector('.hb-btn');if(!menu)return;if(!menu.contains(e.target)&&!btn.contains(e.target)){menu.classList.remove('show');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}});
