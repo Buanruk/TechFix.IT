@@ -261,7 +261,7 @@ $result = $stmt->get_result();
 <div class="shell">
     <div class="container">
         <section class="panel">
-            <header class="panel-head"><h1 class="title">งานซ่อมของฉัน (<?= h($logged_in_technician_fullname) ?>)</h1></header>
+            <header class="panel-head"><h1 class="title">งานซ่อมช่าง (<?= h($logged_in_technician_fullname) ?>)</h1></header>
             <div class="kpis">
                 <div class="kpi total"><h4>ทั้งหมด</h4><div class="num"><?= (int)$stat['all'] ?></div></div>
                 <div class="kpi new"><h4>งานใหม่</h4><div class="num"><?= (int)$stat['new'] ?></div></div>
