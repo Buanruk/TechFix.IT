@@ -352,3 +352,46 @@ a:hover { text-decoration: none; }
   height: 100%;
   object-fit: cover; /* ทำให้วิดีโอขยายเต็มพื้นที่โดยไม่เสียสัดส่วน */
 }
+/* ===== ✅ CSS ใหม่สำหรับเอฟเฟกต์ Cross-Fade ===== */
+
+.story {
+    /* เพิ่มเพื่อให้ .frame อ้างอิงตำแหน่งได้ถูกต้อง */
+    position: relative; 
+}
+
+.frame {
+    /* ทำให้ทุก .frame ซ้อนกันที่ตำแหน่ง sticky เดียวกัน */
+    position: sticky;
+    top: 0;
+
+    /* เพิ่ม transition เพื่อให้เกิด FADE effect */
+    transition: opacity 0.5s ease-in-out;
+}
+
+/* ทำให้ .frame ที่ไม่ใช่ section แรกสุดซ้อนอยู่ข้างใต้ */
+.story > .frame:not(:first-child) {
+    margin-top: -100vh; /* ใช้ค่าลบของความสูงขั้นต่ำเพื่อดึงให้มาซ้อนกัน */
+}
+
+.spacer {
+    /* เพิ่มความสูง spacer เพื่อให้มีพื้นที่ scroll สำหรับ effect */
+    height: 100vh; 
+}
+
+/* ===== ✅ CSS ใหม่สำหรับ SCROLL STORY ===== */
+.story{
+    /* กำหนดความสูงของพื้นที่ scroll ทั้งหมดเท่ากับ จำนวน section x 100vh */
+    /* ถ้ามี 3 section ก็ใส่ 300vh */
+    height: 300vh;
+}
+.frame{
+    position: sticky;
+    top: 0;
+    min-height: 100vh;
+    width: 100%;
+    display: grid;
+    grid-template-columns: .9fr 1.1fr; /* ปรับขนาดคอลัมน์ตามเดิม */
+    gap: 24px;
+    align-items: center;
+    opacity: 0; /* ซ่อนไว้ก่อน รอ JS มาสั่งให้แสดง */
+}

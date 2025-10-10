@@ -173,56 +173,55 @@
     </aside>
   </section>
 
-  <!-- STICKY STORY -->
-  <main id="story" class="wrap story" aria-label="ลำดับคุณสมบัติ">
-    <section class="frame">
-      <div class="glass reveal">
-        <h2 style="margin:0 0 8px;font-size:clamp(22px,3.5vw,34px)"><span style="color:var(--brand)">แจ้งซ่อมง่ายๆ</span> ไม่กี่ขั้นตอน</h2>
-        <p class="lead">สแกน QR ผ่าน LINE กรอกข้อมูลแจ้งซ่อมเพียงไม่กี่ขั้นตอน <br> ระบบจะรับข้อมูลการแจ้งซ่อมและส่งคิวให้ทันที</p>
-        <ul style="margin:12px 0 0;color:var(--muted);line-height:1.9">
-          <li>รองรับอุปกรณ์ IT ทุกชนิด</li>
-          <li>แจ้งเตือนอัตโนมัติในไลน์</li>
-          <li>ติดตามสถานะได้ตลอดเวลา</li>
-        </ul>
-      </div>
-      <div class="reveal">
-        <img src="image/how.png" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
-      </div>
-    </section>
-    <div class="spacer"></div>
+<main id="story" class="wrap story" aria-label="ลำดับคุณสมบัติ">
 
     <section class="frame">
-      <div class="glass reveal">
-        <h2 style="margin:0 0 8px;font-size:clamp(22px,3.5vw,34px)">อัปเดต <span style="color:var(--accent)">เรียลไทม์</span></h2>
-        <p class="lead">สถานะ “แจ้งซ่อม → กำลังซ่อม → เสร็จสิ้น” ถูกซิงก์ทั้งหน้าเว็บและ LINE พร้อม timestamp</p>
-        <ul style="margin:12px 0 0;color:var(--muted);line-height:1.9">
-          <li>การ์ดสรุปงาน + ค้นหาตามสถานะ</li>
-          <li>แจ้งเตือนเมื่อมีการเปลี่ยนแปลง</li>
-          <li>ส่งการแจ้งเตือนเข้า LINE หลังซ่อมเสร็จ</li>
-        </ul>
-      </div>
-      <div class="reveal">
-       <img src="image/ai.png" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
-      </div>
+        <div class="glass reveal">
+            <h2 style="margin:0 0 8px;font-size:clamp(22px,3.5vw,34px)"><span style="color:var(--brand)">แจ้งซ่อมง่ายๆ</span> ไม่กี่ขั้นตอน</h2>
+            <p class="lead">สแกน QR ผ่าน LINE กรอกข้อมูลแจ้งซ่อมเพียงไม่กี่ขั้นตอน <br> ระบบจะรับข้อมูลการแจ้งซ่อมและส่งคิวให้ทันที</p>
+            <ul style="margin:12px 0 0;color:var(--muted);line-height:1.9">
+                <li>รองรับอุปกรณ์ IT ทุกชนิด</li>
+                <li>แจ้งเตือนอัตโนมัติในไลน์</li>
+                <li>ติดตามสถานะได้ตลอดเวลา</li>
+            </ul>
+        </div>
+        <div class="reveal">
+            <img src="image/how2.png" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
+        </div>
     </section>
-    <div class="spacer"></div>
 
     <section class="frame">
-      <div class="glass reveal">
-        <h2 style="margin:0 0 8px;font-size:clamp(22px,3.5vw,34px)">พร้อมใช้งานทุก <span style="color:var(--brand)">อุปกรณ์</span></h2>
-        <p class="lead">Smartphone, PC, Laptop, Tablet</p>
-        <ul style="margin:12px 0 0;color:var(--muted);line-height:1.9">
-          <li>1 LINE ID แจ้งได้หลายอุปกรณ์ (โครงสร้าง <code>one-to-many</code> + <code>user token</code>)</li>
-          <li>ช่วยตรวจคำผิดด้วย AI</li>
-          <li>คำนึงถึงความปลอดภัยของข้อมูลส่วนบุคคล</li>
-          <li>การเก็บข้อมูลเพื่อพัฒนาความเสถียร</li>
-        </ul>
-      </div>
-      <div class="reveal">
-        <img src="image/robot_parallax.png" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
-      </div>
+        <div class="reveal">
+            <img src="image/ai.png" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
+        </div>
+        <div class="glass reveal">
+            <h2 style="margin:0 0 8px;font-size:clamp(22px,3.5vw,34px)">อัปเดต <span style="color:var(--accent)">เรียลไทม์</span></h2>
+            <p class="lead">สถานะ “แจ้งซ่อม → กำลังซ่อม → เสร็จสิ้น” ถูกซิงก์ทั้งหน้าเว็บและ LINE พร้อม timestamp</p>
+            <ul style="margin:12px 0 0;color:var(--muted);line-height:1.9">
+                <li>การ์ดสรุปงาน + ค้นหาตามสถานะ</li>
+                <li>แจ้งเตือนเมื่อมีการเปลี่ยนแปลง</li>
+                <li>ส่งการแจ้งเตือนเข้า LINE หลังซ่อมเสร็จ</li>
+            </ul>
+        </div>
     </section>
-  </main>
+
+    <section class="frame">
+        <div class="glass reveal">
+            <h2 style="margin:0 0 8px;font-size:clamp(22px,3.5vw,34px)">พร้อมใช้งานทุก <span style="color:var(--brand)">อุปกรณ์</span></h2>
+            <p class="lead">Smartphone , PC , Laptop , Tablet</p>
+            <ul style="margin:12px 0 0;color:var(--muted);line-height:1.9">
+                <li>1 LINE ID แจ้งได้หลายอุปกรณ์ (โครงสร้าง <code>one-to-many</code> + <code>user token</code>)</li>
+                <li>ช่วยตรวจคำผิดด้วย AI</li>
+                <li>คำนึงถึงความปลอดภัยของข้อมูลส่วนบุคคล</li>
+                <li>การเก็บข้อมูลเพื่อพัฒนาความเสถียร</li>
+            </ul>
+        </div>
+        <div class="reveal">
+            <img src="image/device.png" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
+        </div>
+    </section>
+
+</main>
 
   <!-- Masonry showcase -->
   <section class="wrap">
@@ -324,6 +323,43 @@
         if(id.length>1){ e.preventDefault(); document.querySelector(id)?.scrollIntoView({behavior:'smooth'}); }
       });
     });
+
+// ===== ✅ JavaScript (เวอร์ชันอัปเดต) สำหรับเอฟเฟกต์ Sticky Fade ที่ช้าลง =====
+function handleStickyFade() {
+    const frames = document.querySelectorAll('.story > .frame');
+    const story = document.querySelector('.story');
+    if (!story || frames.length === 0) return;
+
+    const scrollRect = story.getBoundingClientRect();
+    const scrollPercent = Math.max(0, -scrollRect.top) / (story.scrollHeight - window.innerHeight);
+    const progressValue = scrollPercent * frames.length;
+    const lastFrameIndex = frames.length - 1;
+
+    frames.forEach((frame, index) => {
+        const distance = Math.abs(index - progressValue);
+        let opacity;
+
+        // เพิ่มเงื่อนไขพิเศษสำหรับ frame สุดท้าย (เหมือนเดิม)
+        if (index === lastFrameIndex) {
+            // ถ้าเป็น frame สุดท้าย: จะ fade in เข้ามา แต่จะไม่ fade out ออกไป
+            opacity = Math.max(0, Math.min(1, 1 - (index - progressValue)));
+        } else {
+            // ✅ ถ้าเป็น frame อื่นๆ: ใช้ตรรกะใหม่ที่ fade ช้าลง
+            // การคำนวณแบบ (1 - distance^2) จะทำให้ opacity คงที่ที่ 1 นานขึ้น
+            // ทำให้ section จางหายไปช้ากว่าเดิม
+            const adjustedDistance = Math.min(1, distance);
+            opacity = Math.max(0, 1 - (adjustedDistance * adjustedDistance));
+        }
+
+        frame.style.opacity = opacity;
+    });
+}
+
+// เรียกใช้ฟังก์ชันนี้เมื่อมีการ scroll (เหมือนเดิม)
+window.addEventListener('scroll', handleStickyFade, { passive: true });
+
+// เรียกใช้ครั้งแรกตอนโหลดหน้าเว็บ (เหมือนเดิม)
+handleStickyFade();
   </script>
 </body>
 </html>
