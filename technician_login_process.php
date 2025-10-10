@@ -20,6 +20,35 @@ $stmt = $conn->prepare("SELECT id, username, fullname, password_hash FROM techni
 $stmt->bind_param("s", $username);
 $stmt->execute();
 $res = $stmt->get_result();
+// ============ โค้ดสำหรับ Debug เริ่ม (วางต่อจาก $res = $stmt->get_result();) ============
+
+if ($res->num_rows === 0) {
+    // กรณีนี้คือหา username 'peerapat' ไม่เจอในตารางเลย
+    die("DEBUG MODE: ไม่พบ username 'peerapat' ในตาราง `technicians`");
+}
+
+$row = $res->fetch_assoc();
+echo "DEBUG MODE: ข้อมูลที่ดึงมาจากฐานข้อมูล:<br>";
+var_dump($row); // แสดงข้อมูลทั้งหมดที่ดึงมา รวมถึง hash
+
+$password_from_form = $password; // รหัสผ่านจากฟอร์ม
+$hash_from_db = $row['password_hash']; // hash จากฐานข้อมูล
+$is_password_correct = password_verify($password_from_form, $hash_from_db); // ตรวจสอบรหัสผ่าน
+
+echo "<hr>";
+echo "รหัสผ่านที่กรอก: " . htmlspecialchars($password_from_form) . "<br>";
+echo "Hash จากฐานข้อมูล: " . htmlspecialchars($hash_from_db) . "<br>";
+echo "ผลการตรวจสอบรหัสผ่าน (password_verify) คือ: ";
+var_dump($is_password_correct); // แสดงผลลัพธ์เป็น true (ถูกต้อง) หรือ false (ผิด)
+
+exit; // *** สำคัญมาก: สั่งให้สคริปต์หยุดทำงานตรงนี้เลย จะได้ไม่ redirect ไปไหน ***
+
+// ============ โค้ดสำหรับ Debug จบ ============
+
+
+// โค้ดเดิมที่ใช้เช็คจริงๆ จะอยู่ข้างล่างต่อไป (ตอนนี้จะไม่ถูกรันเพราะเรา exit ไปก่อน)
+if ($res && $res->num_rows === 1) {
+// ...
 
 // ตรวจสอบว่าเจอ username นี้ในระบบหรือไม่
 if ($res && $res->num_rows === 1) {
