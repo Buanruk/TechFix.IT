@@ -1,5 +1,5 @@
 <?php
-// changes_ping.php (เวอร์ชันอัปเดตสำหรับ Admin และ Technician)
+// changes_ping.php (เวอร์ชันใหม่ รองรับ Role-based)
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 date_default_timezone_set('Asia/Bangkok');
@@ -7,20 +7,15 @@ date_default_timezone_set('Asia/Bangkok');
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
-// ✅ 1. เริ่ม session เพื่อตรวจสอบสิทธิ์
 session_start();
 
-// ✅ 2. ตรวจสอบว่ามีการล็อกอินหรือไม่ (ไม่ว่าจะเป็น Admin หรือ Technician)
-if (!isset($_SESSION['admin_id']) && !isset($_SESSION['technician_id'])) {
-    http_response_code(403); // Forbidden
-    echo json_encode(['ok' => false, 'error' => 'Authentication required']);
-    exit;
-}
+// รับค่า role จาก URL
+$role = $_GET['role'] ?? '';
 
 $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
 $conn->set_charset("utf8mb4");
 
-// ✅ 3. สร้าง SQL ตามสิทธิ์ของผู้ใช้
+// เตรียม SQL พื้นฐาน
 $baseSql = "
     SELECT
         SUM(status='new') AS c_new,
@@ -32,32 +27,31 @@ $baseSql = "
     FROM device_reports
 ";
 
-$sql = '';
-$params = [];
-$types = '';
+$res = null;
 
-if (isset($_SESSION['admin_id'])) {
-    // ถ้าเป็น Admin, ใช้ SQL เดิม (ดูข้อมูลทั้งหมด)
-    $sql = $baseSql;
-} elseif (isset($_SESSION['technician_id'])) {
-    // ถ้าเป็น Technician, เพิ่ม WHERE clause เพื่อกรองเฉพาะงานของตัวเอง
-    $technician_id = (int)$_SESSION['technician_id'];
-    $sql = $baseSql . " WHERE technician_id = ?";
-    $types = "i";
-    $params[] = $technician_id;
+// ตรวจสอบ role แล้วเลือกวิธีดึงข้อมูล
+if ($role === 'admin') {
+    // ✅ ถ้าเป็น admin, ใช้โค้ดเดิมที่ดึงข้อมูลทั้งหมด ไม่ต้องแก้
+    $res = $conn->query($baseSql)->fetch_assoc();
+
+} elseif ($role === 'technician') {
+    // ✅ ถ้าเป็น technician, ต้องแน่ใจว่า login อยู่ แล้วกรองข้อมูล
+    if (isset($_SESSION['technician_id'])) {
+        $technician_id = (int)$_SESSION['technician_id'];
+        
+        $sql = $baseSql . " WHERE technician_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $technician_id);
+        $stmt->execute();
+        $res = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+    }
 }
 
-// ✅ 4. ใช้ Prepared Statement เพื่อความปลอดภัยและรองรับทั้งสองกรณี
-$stmt = $conn->prepare($sql);
-if (!empty($types)) {
-    $stmt->bind_param($types, ...$params);
-}
-$stmt->execute();
-$res = $stmt->get_result()->fetch_assoc() ?: [
-    'c_new'=>0, 'c_inp'=>0, 'c_done'=>0, 'c_all'=>0, 'max_id'=>0, 'last_ts'=>0
+// ถ้าไม่มีผลลัพธ์ (เช่น role ไม่ถูกต้อง หรือ technician ยังไม่ login) ให้ใช้ค่า default
+$res = $res ?: [
+    'c_new'=>0,'c_inp'=>0,'c_done'=>0,'c_all'=>0,'max_id'=>0,'last_ts'=>0
 ];
-$stmt->close();
-
 
 // ส่วนที่เหลือทำงานเหมือนเดิม
 $payload = [

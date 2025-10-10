@@ -664,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </div>
 
 <script>
-    const PING_URL = 'changes_ping.php';
+    const PING_URL = 'changes_ping.php?role=admin';
     const POLL_MS  = 5000;
     let lastSig = null;
 
