@@ -398,6 +398,10 @@ $result = $stmt->get_result();
     </div>
 </div>
 
+<div id="liveNotice" class="live-notice" role="status" aria-live="polite">
+    มีการอัปเดตใหม่ กำลังโหลดข้อมูล...
+</div>
+
 <script>
 function toggleNavMenu(btn){const menu=document.getElementById('navMenu');const show=!menu.classList.contains('show');menu.classList.toggle('show',show);btn.classList.toggle('active',show);btn.setAttribute('aria-expanded',show?'true':'false');menu.setAttribute('aria-hidden',show?'false':'true')}
 document.addEventListener('click',e=>{const menu=document.getElementById('navMenu');const btn=document.querySelector('.hb-btn');if(!menu)return;if(!menu.contains(e.target)&&!btn.contains(e.target)){menu.classList.remove('show');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}});
