@@ -1,15 +1,17 @@
 <?php
+// ✅ 1. เพิ่มระบบตรวจสอบการ Login (สำคัญที่สุด)
 session_start();
 
-// 1. ตรวจสอบว่ามี session ของช่างอยู่หรือไม่ ถ้าไม่มีให้เด้งกลับไปหน้า login (สำคัญที่สุด)
+// ตรวจสอบว่ามี session ของช่างอยู่หรือไม่ ถ้าไม่มีให้เด้งกลับไปหน้า login
 if (!isset($_SESSION['technician_id'])) {
     header('Location: technician_login.php');
     exit();
 }
 
-// เก็บ ID และชื่อของช่างที่ login อยู่ไว้ในตัวแปร
+// เก็บ ID และชื่อของช่างที่ login อยู่ไว้ในตัวแปรเพื่อใช้งาน
 $logged_in_technician_id = (int)$_SESSION['technician_id'];
 $logged_in_technician_fullname = $_SESSION['technician_fullname'];
+
 
 // ===== DB =====
 $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
@@ -68,7 +70,7 @@ function pageUrl($p, $status, $dtype){
     return '?status='.urlencode($status).'&dtype='.urlencode($dtype).'&page='.$p;
 }
 
-/** 2. สร้าง WHERE + types + values (เวอร์ชันแก้ไขให้รับ tech_id) */
+/** ✅ 2. แก้ไขฟังก์ชัน SQL ให้รับ ID ของช่างมาด้วย */
 function build_where_and_params($status, $dtype, $regexMap, $tech_id = null){
     $wheres = []; $types = ''; $vals = [];
 
@@ -90,7 +92,7 @@ function build_where_and_params($status, $dtype, $regexMap, $tech_id = null){
     return [$whereSQL, $types, $vals];
 }
 
-// ===== 3. สรุปจำนวนแต่ละสถานะ (การ์ดสรุป) — แก้ไขให้นับเฉพาะงานของช่างคนนี้ =====
+// ===== ✅ 2. แก้ไขส่วนสรุปยอด (KPI) ให้นับเฉพาะงานของช่างคนนี้ =====
 $stat = ['new'=>0,'in_progress'=>0,'done'=>0,'all'=>0];
 $statSql = "SELECT status, COUNT(*) AS c FROM device_reports WHERE technician_id = ? GROUP BY status";
 $statStmt = $conn->prepare($statSql);
@@ -105,7 +107,7 @@ if ($qr) {
     }
 }
 
-// ===== นับจำนวนตามตัวกรอง (status + dtype) — แก้ไขให้ส่ง tech_id ไปด้วย =====
+// ===== ✅ 2. แก้ไขการนับจำนวนหน้า ให้กรองเฉพาะงานของช่างคนนี้ =====
 [$whereCnt, $typesCnt, $valsCnt] = build_where_and_params($filterStatus, $filterDtype, $regexMap, $logged_in_technician_id);
 $countSql  = "SELECT COUNT(*) AS total FROM device_reports $whereCnt";
 $countStmt = $conn->prepare($countSql);
@@ -116,7 +118,7 @@ $totalRows = (int)($countRes->fetch_assoc()['total'] ?? 0);
 $totalPages = max(1, (int)ceil($totalRows / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
 
-// ===== โหลดรายการตามตัวกรอง + LIMIT/OFFSET — แก้ไขให้ส่ง tech_id ไปด้วย =====
+// ===== ✅ 2. แก้ไขการโหลดรายการ ให้กรองเฉพาะงานของช่างคนนี้ =====
 [$whereSel, $typesSel, $valsSel] = build_where_and_params($filterStatus, $filterDtype, $regexMap, $logged_in_technician_id);
 $selSql = "SELECT * FROM device_reports $whereSel ORDER BY id DESC LIMIT ? OFFSET ?";
 $typesSel .= "ii";
@@ -301,7 +303,7 @@ $result = $stmt->get_result();
                             <th class="tc">คิว</th>
                             <th>ชื่อผู้แจ้ง</th>
                             <th class="tc">สถานะ</th>
-                            <th class="tc">เปลี่ยนสถานะ / ลบ</th>
+                            <th class="tc">เปลี่ยนสถานะ</th>
                             <th class="tc">รายละเอียด</th>
                             </tr>
                     </thead>
@@ -314,7 +316,6 @@ $result = $stmt->get_result();
                                 $room = $row['room'] ?? ($row['floor'] ?? '');
                                 $s = in_array($row['status'], ['new','in_progress','done']) ? $row['status'] : 'new';
                                 $reportTime = h(@date('d/m/Y H:i', strtotime($row['report_date'])) ?: $row['report_date']);
-                                $assignedTech = $row['assigned_technician'] ?? null;
                             ?>
                             <tr
                                 data-queue="<?= h($row['queue_number']) ?>"
