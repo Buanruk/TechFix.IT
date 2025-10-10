@@ -202,7 +202,7 @@
         </ul>
       </div>
       <div class="reveal">
-       <img src="image/hand.jpg" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
+       <img src="image/ai.png" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
       </div>
     </section>
     <div class="spacer"></div>
