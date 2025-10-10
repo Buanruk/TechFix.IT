@@ -128,12 +128,16 @@
     <div class="logo"><span class="dot"></span> TechFix.it</div>
 
     <nav class="nav-actions">
-      <!-- เหลือปุ่ม Administrator บนแถบบน -->
-      <a href="admin_login.php" class="btn btn-admin" aria-label="เข้าสู่ระบบแอดมิน">
+    <a href="technician_login.php" class="btn btn-admin outline" aria-label="เข้าสู่ระบบช่างเทคนิค">
+        <i class="fas fa-wrench" aria-hidden="true"></i>
+        Technician
+    </a>
+
+    <a href="admin_login.php" class="btn btn-admin" aria-label="เข้าสู่ระบบแอดมิน">
         <i class="fas fa-user-shield" aria-hidden="true"></i>
         Administrator
-      </a>
-    </nav>
+    </a>
+</nav>
   </header>
 
   <!-- HERO with parallax layers -->
