@@ -165,7 +165,6 @@ unset($_SESSION['error']); // ลบออกหลังแสดง
   </div>
 
   <script>
-    // Script ส่วนนี้ใช้ของเดิมได้เลย ไม่ต้องแก้ไข
     function togglePassword(){
       const input = document.getElementById('password');
       const eye = document.getElementById('eye');
