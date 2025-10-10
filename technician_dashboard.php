@@ -410,11 +410,8 @@ $result = $stmt->get_result();
     }
 </style>
 
-<div id="liveNotice" class="live-notice" role="status" aria-live="polite">
-    มีการอัปเดตใหม่ กำลังโหลดข้อมูล...
-</div>
-
 <script>
+    // --- โค้ดสำหรับ Auto Update ---
     const PING_URL = 'changes_ping.php?role=technician';
     const POLL_MS  = 5000;
     let lastSig = null;
@@ -440,20 +437,23 @@ $result = $stmt->get_result();
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') pingChanges();
     });
+</script>
 
 <script>
-function toggleNavMenu(btn){const menu=document.getElementById('navMenu');const show=!menu.classList.contains('show');menu.classList.toggle('show',show);btn.classList.toggle('active',show);btn.setAttribute('aria-expanded',show?'true':'false');menu.setAttribute('aria-hidden',show?'false':'true')}
-document.addEventListener('click',e=>{const menu=document.getElementById('navMenu');const btn=document.querySelector('.hb-btn');if(!menu)return;if(!menu.contains(e.target)&&!btn.contains(e.target)){menu.classList.remove('show');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){const menu=document.getElementById('navMenu');const btn=document.querySelector('.hb-btn');if(menu&&menu.classList.contains('show')){menu.classList.remove('show');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}}});
-document.addEventListener('DOMContentLoaded',()=>{const modalOverlay=document.getElementById('detailsModal');const modalBody=document.getElementById('modalBody');const modalTitle=document.getElementById('modalTitle');const table=document.querySelector('.table-wrap');const openModal=data=>{modalTitle.textContent=`รายละเอียดคิว: ${data.queue} (คุณ ${data.username})`;modalBody.innerHTML=`
- <span class="label">อุปกรณ์:</span><span class="value">${data.device||'-'}</span>
- <span class="label">หมายเลขเครื่อง:</span><span class="value">${data.serial||'-'}</span>
- <span class="label">ห้อง/ชั้น:</span><span class="value">${data.room||'-'}</span>
- <span class="label">เบอร์โทร:</span><span class="value">${data.phone||'-'}</span>
- <span class="label">เวลาแจ้ง:</span><span class="value">${data.time||'-'}</span>
- <span class="label" style="grid-column: 1 / -1; margin-top: 8px;"><b>ปัญหาที่แจ้ง:</b></span>
- <span class="value" style="grid-column: 1 / -1; margin-top: -10px; background: #f5f9ff; padding: 10px; border-radius: 8px;">${data.issue||'-'}</span>`;modalOverlay.classList.add('show')};const closeModal=()=>{modalOverlay.classList.remove('show')};if(table){table.addEventListener('click',e=>{if(e.target.classList.contains('btn-details')){const row=e.target.closest('tr');if(!row)return;const reportData={queue:row.dataset.queue,username:row.dataset.username,device:row.dataset.device,serial:row.dataset.serial,room:row.dataset.room,phone:row.dataset.phone,time:row.dataset.time,issue:row.dataset.issue,};openModal(reportData)}})}
-modalOverlay.addEventListener('click',e=>{if(e.target===modalOverlay||e.target.classList.contains('modal-close')){closeModal()}});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modalOverlay.classList.contains('show')){closeModal()}})});
+    // --- โค้ดสำหรับเมนูและ Modal ---
+    function toggleNavMenu(btn){const menu=document.getElementById('navMenu');const show=!menu.classList.contains('show');menu.classList.toggle('show',show);btn.classList.toggle('active',show);btn.setAttribute('aria-expanded',show?'true':'false');menu.setAttribute('aria-hidden',show?'false':'true')}
+    document.addEventListener('click',e=>{const menu=document.getElementById('navMenu');const btn=document.querySelector('.hb-btn');if(!menu)return;if(!menu.contains(e.target)&&!btn.contains(e.target)){menu.classList.remove('show');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){const menu=document.getElementById('navMenu');const btn=document.querySelector('.hb-btn');if(menu&&menu.classList.contains('show')){menu.classList.remove('show');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}}});
+    document.addEventListener('DOMContentLoaded',()=>{const modalOverlay=document.getElementById('detailsModal');const modalBody=document.getElementById('modalBody');const modalTitle=document.getElementById('modalTitle');const table=document.querySelector('.table-wrap');const openModal=data=>{modalTitle.textContent=`รายละเอียดคิว: ${data.queue} (คุณ ${data.username})`;modalBody.innerHTML=`
+    <span class="label">อุปกรณ์:</span><span class="value">${data.device||'-'}</span>
+    <span class="label">หมายเลขเครื่อง:</span><span class="value">${data.serial||'-'}</span>
+    <span class="label">ห้อง/ชั้น:</span><span class="value">${data.room||'-'}</span>
+    <span class="label">เบอร์โทร:</span><span class="value">${data.phone||'-'}</span>
+    <span class="label">เวลาแจ้ง:</span><span class="value">${data.time||'-'}</span>
+    <span class="label" style="grid-column: 1 / -1; margin-top: 8px;"><b>ปัญหาที่แจ้ง:</b></span>
+    <span class="value" style="grid-column: 1 / -1; margin-top: -10px; background: #f5f9ff; padding: 10px; border-radius: 8px;">${data.issue||'-'}</span>`;modalOverlay.classList.add('show')};const closeModal=()=>{modalOverlay.classList.remove('show')};if(table){table.addEventListener('click',e=>{if(e.target.classList.contains('btn-details')){const row=e.target.closest('tr');if(!row)return;const reportData={queue:row.dataset.queue,username:row.dataset.username,device:row.dataset.device,serial:row.dataset.serial,room:row.dataset.room,phone:row.dataset.phone,time:row.dataset.time,issue:row.dataset.issue,};openModal(reportData)}})}
+    modalOverlay.addEventListener('click',e=>{if(e.target===modalOverlay||e.target.classList.contains('modal-close')){closeModal()}});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modalOverlay.classList.contains('show')){closeModal()}})});
 </script>
+
 </body>
 </html>
