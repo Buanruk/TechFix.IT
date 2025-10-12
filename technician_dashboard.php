@@ -18,7 +18,7 @@ $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
 if ($conn->connect_error) { die("DB Error"); }
 $conn->set_charset("utf8");
 
-// (ส่วน PHP ที่เหลือทั้งหมดเหมือนเดิม ไม่ต้องแก้ไข)
+// ===== Map ประเภทอุปกรณ์ และ regex (เหมือนเดิม) =====
 $dtypes = [
     'all'     => 'อุปกรณ์ทั้งหมด',
     'pc'      => 'ปัญหาเกี่ยวกับคอมพิวเตอร์',
@@ -34,13 +34,20 @@ $regexMap = [
     'network' => '(เครือข่าย|network|lan|wifi|router|switch)',
     'tv'      => '(tv|ทีวี|monitor|จอภาพ)',
 ];
+
+// ===== รับค่า Filter (เหมือนเดิม) =====
 $filterStatus = $_GET['status'] ?? 'all';
 if (!in_array($filterStatus, ['all','new','in_progress','done'], true)) $filterStatus = 'all';
+
 $filterDtype = $_GET['dtype'] ?? 'all';
 if (!in_array($filterDtype, array_keys($dtypes), true)) $filterDtype = 'all';
+
+// ===== ตั้งค่าการแบ่งหน้า (เหมือนเดิม) =====
 $perPage = 10;
 $page    = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $offset  = ($page - 1) * $perPage;
+
+// ===== ฟังก์ชันช่วย (เหมือนเดิม) =====
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 function statusText($s){
     return match($s){
@@ -62,22 +69,30 @@ function pageUrl($p, $status, $dtype){
     $p = max(1,(int)$p);
     return '?status='.urlencode($status).'&dtype='.urlencode($dtype).'&page='.$p;
 }
+
+/** ✅ 2. แก้ไขฟังก์ชัน SQL ให้รับ ID ของช่างมาด้วย */
 function build_where_and_params($status, $dtype, $regexMap, $tech_id = null){
     $wheres = []; $types = ''; $vals = [];
+
+    // เพิ่มเงื่อนไขสำหรับ technician_id เป็นอันดับแรก
     if ($tech_id !== null) {
         $wheres[] = "technician_id = ?";
         $types .= "i";
         $vals[] = $tech_id;
     }
+
     if ($status !== 'all'){ $wheres[] = "status = ?"; $types .= "s"; $vals[] = $status; }
     if ($dtype  !== 'all' && isset($regexMap[$dtype])){
         $wheres[] = "LOWER(device_type) REGEXP ?";
         $types   .= "s";
         $vals[]   = strtolower($regexMap[$dtype]);
     }
+
     $whereSQL = $wheres ? ("WHERE ".implode(" AND ", $wheres)) : "";
     return [$whereSQL, $types, $vals];
 }
+
+// ===== ✅ 2. แก้ไขส่วนสรุปยอด (KPI) ให้นับเฉพาะงานของช่างคนนี้ =====
 $stat = ['new'=>0,'in_progress'=>0,'done'=>0,'all'=>0];
 $statSql = "SELECT status, COUNT(*) AS c FROM device_reports WHERE technician_id = ? GROUP BY status";
 $statStmt = $conn->prepare($statSql);
@@ -91,6 +106,8 @@ if ($qr) {
         $stat['all'] += (int)$r['c'];
     }
 }
+
+// ===== ✅ 2. แก้ไขการนับจำนวนหน้า ให้กรองเฉพาะงานของช่างคนนี้ =====
 [$whereCnt, $typesCnt, $valsCnt] = build_where_and_params($filterStatus, $filterDtype, $regexMap, $logged_in_technician_id);
 $countSql  = "SELECT COUNT(*) AS total FROM device_reports $whereCnt";
 $countStmt = $conn->prepare($countSql);
@@ -100,11 +117,14 @@ $countRes  = $countStmt->get_result();
 $totalRows = (int)($countRes->fetch_assoc()['total'] ?? 0);
 $totalPages = max(1, (int)ceil($totalRows / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
+
+// ===== ✅ 2. แก้ไขการโหลดรายการ ให้กรองเฉพาะงานของช่างคนนี้ =====
 [$whereSel, $typesSel, $valsSel] = build_where_and_params($filterStatus, $filterDtype, $regexMap, $logged_in_technician_id);
 $selSql = "SELECT * FROM device_reports $whereSel ORDER BY id DESC LIMIT ? OFFSET ?";
 $typesSel .= "ii";
 $valsSel[] = $perPage;
 $valsSel[] = $offset;
+
 $stmt = $conn->prepare($selSql);
 $stmt->bind_param($typesSel, ...$valsSel);
 $stmt->execute();
@@ -117,7 +137,7 @@ $result = $stmt->get_result();
 <title>งานซ่อมของฉัน - TechFix</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-    /* CSS ส่วนใหญ่เหมือนเดิม */
+    /* CSS ทั้งหมดเหมือนเดิม */
     :root{--navy:#0b2440; --blue:#1e88e5; --bg:#f5f9ff; --card:#ffffff; --line:#e6effa; --text:#1f2937;--green:#2e7d32; --red:#c62828; --blue-strong:#0b63c8;--shadow:0 16px 40px rgba(10,37,64,.12);--radius:20px;--container:1680px;}
     *{box-sizing:border-box} html,body{margin:0}
     body{font-family:system-ui,Segoe UI,Roboto,"TH Sarabun New",Tahoma,sans-serif;color:var(--text);background: radial-gradient(1200px 600px at 50% -240px,#eaf3ff 0,transparent 60%),linear-gradient(180deg,#fbfdff 0,var(--bg) 100%);}
@@ -171,12 +191,19 @@ $result = $stmt->get_result();
     .badge.new{background:#ffecec;color:var(--red);border-color:#ffd6d6}
     .badge.in_progress{background:#eef5ff;color:#0b63c8;border-color:#d6eaff}
     .badge.done{background:#e9f9ec;color:#2e7d32;border-color:#d1f3d8}
-    .btn-details, .btn-update-status{font-family:inherit;font-size:13px;font-weight:700;padding:6px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;transition:all .18s ease;margin:0}
+    
+    /* ===== 1. เพิ่ม CSS สำหรับปุ่มใหม่ ===== */
+    .btn-del,.btn-details,.btn-finish-job{font-family:inherit;font-size:13px;font-weight:700;padding:6px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;transition:all .18s ease;margin:0}
+    .btn-del{background:#fff;color:var(--red)}
+    .btn-del:hover{background:var(--red);color:#fff;border-color:var(--red)}
     .btn-details{background:var(--blue);color:#fff;border-color:var(--blue)}
     .btn-details:hover{background:#0b63c8;border-color:#0b63c8}
-    .btn-update-status{background:var(--green);color:#fff;border-color:var(--green)}
-    .btn-update-status:hover{background:#1b5e20;border-color:#1b5e20}
+    .btn-finish-job{background:var(--green);color:#fff;border-color:var(--green); min-width: 100px;}
+    .btn-finish-job:hover{background:#1b5e20;border-color:#1b5e20}
+    .btn-finish-job:disabled{background:#a5d6a7;border-color:#a5d6a7;color:#fff;cursor:not-allowed;opacity:0.7}
+
     .action-cell{display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:center}
+    .action-cell form{margin:0}
     .empty{padding:28px;text-align:center;color:#667085}
     .pager{display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;background:#fff;border-top:1px solid var(--line);flex-wrap:wrap}
     .pager a,.pager span{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:#0b2440;font-weight:800;background:#fff}
@@ -184,6 +211,8 @@ $result = $stmt->get_result();
     .pager .active{background:#e8f2ff;border-color:#b9dcff;color:#0b63c8}
     .pager .disabled{opacity:.45;pointer-events:none}
     @media (max-width:960px){thead{display:none} tbody tr{display:block;border:1px solid var(--line);border-radius:14px;margin:12px;padding:8px;box-shadow:0 8px 18px rgba(15,40,80,.06);overflow:hidden} tbody td{display:flex;gap:10px;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding:10px} tbody tr td:first-child{border-top:none} tbody td::before{content:attr(data-label);font-weight:800;color:#0f3a66} .ellipsis{max-width:180px} .toolbar{flex-direction:column;align-items:stretch;gap:10px} .select{min-width:unset;width:100%} .action-cell{flex-direction:row;justify-content:center}}
+    
+    /* CSS สำหรับ Modal (เหมือนเดิม) */
     .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,40,80,.6);backdrop-filter:blur(5px);z-index:9998;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s ease}
     .modal-overlay.show{opacity:1;pointer-events:auto}
     .modal-content{background:#fff;border-radius:var(--radius);box-shadow:0 20px 50px rgba(0,0,0,.2);max-width:90vw;width:600px;max-height:85vh;display:flex;flex-direction:column;transform:scale(.95);transition:transform .25s ease}
@@ -195,37 +224,38 @@ $result = $stmt->get_result();
     .modal-body .label{font-weight:800;color:var(--navy)}
     .modal-body .value{word-break:break-word;white-space:pre-wrap}
 
-    /* ===== จุดที่แก้ไข: เพิ่ม CSS สำหรับ Modal Footer และปุ่ม ===== */
-    .modal-footer {
-        padding: 16px 22px;
-        border-top: 1px solid var(--line);
-        background: #f9fafb;
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-    }
-    .btn-cancel, .btn-confirm-done {
-        font-family:inherit;font-size:14px;font-weight:700;padding:8px 16px;
-        border:1px solid transparent;border-radius:10px;cursor:pointer;transition:all .18s ease;
-    }
-    .btn-cancel {
-        background: #fff; color: var(--text); border-color: #d1d5db;
-    }
-    .btn-cancel:hover { background-color: #f3f4f6; }
-    .btn-confirm-done {
-        background: var(--green); color: #fff;
-    }
-    .btn-confirm-done:hover { background-color: #1b5e20; }
+    /* ===== 1. เพิ่ม CSS สำหรับ Modal Footer และปุ่มยืนยัน ===== */
+    .modal-footer{padding:12px 22px;background:#f5f9ff;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:12px;}
+    .btn-cancel,.btn-confirm-finish{font-family:inherit;font-size:14px;font-weight:700;padding:8px 14px;border:1px solid var(--line);border-radius:10px;cursor:pointer;transition:all .18s ease}
+    .btn-cancel{background:#fff;color:#333}
+    .btn-cancel:hover{background:#f0f0f0;border-color:#ccc}
+    .btn-confirm-finish{background:var(--green);color:#fff;border-color:var(--green)}
+    .btn-confirm-finish:hover{background:#1b5e20;border-color:#1b5e20}
 </style>
 </head>
 <body>
 
 <header class="site-header">
     <nav class="navbar">
-        <a class="brand" href="#"><span class="brand-mark">🛠️</span><span><span class="brand-title">TechFix.it</span><br><small class="brand-sub">Dashboard ช่างเทคนิค</small></span></a>
+        <a class="brand" href="#">
+            <span class="brand-mark">🛠️</span>
+            <span>
+                <span class="brand-title">TechFix.it</span><br>
+                <small class="brand-sub">Dashboard ช่างเทคนิค</small>
+            </span>
+        </a>
         <div class="nav-actions">
-            <button class="hb-btn" aria-label="เปิดเมนู" aria-expanded="false" onclick="toggleNavMenu(this)"><span></span><span></span><span></span></button>
-            <div id="navMenu" class="nav-menu" role="menu" aria-hidden="true"><a href="logout.php" class="menu-item logout" role="menuitem"><span class="menu-icon"><svg viewBox="0 0 24 24"><path d="M15 12H3"></path><path d="M11 8l-4 4 4 4"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg></span>ออกจากระบบ</a></div>
+            <button class="hb-btn" aria-label="เปิดเมนู" aria-expanded="false" onclick="toggleNavMenu(this)">
+                <span></span><span></span><span></span>
+            </button>
+            <div id="navMenu" class="nav-menu" role="menu" aria-hidden="true">
+                <a href="logout.php" class="menu-item logout" role="menuitem">
+                    <span class="menu-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M15 12H3"></path><path d="M11 8l-4 4 4 4"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg>
+                    </span>
+                    ออกจากระบบ
+                </a>
+            </div>
         </div>
     </nav>
 </header>
@@ -233,7 +263,7 @@ $result = $stmt->get_result();
 <div class="shell">
     <div class="container">
         <section class="panel">
-            <header class="panel-head"><h1 class="title">งานซ่อมของช่าง (<?= h($logged_in_technician_fullname) ?>)</h1></header>
+            <header class="panel-head"><h1 class="title">งานซ่อมช่าง (<?= h($logged_in_technician_fullname) ?>)</h1></header>
             <div class="kpis">
                 <div class="kpi total"><h4>ทั้งหมด</h4><div class="num"><?= (int)$stat['all'] ?></div></div>
                 <div class="kpi new"><h4>งานใหม่</h4><div class="num"><?= (int)$stat['new'] ?></div></div>
@@ -241,15 +271,44 @@ $result = $stmt->get_result();
                 <div class="kpi done"><h4>ทำเสร็จ</h4><div class="num"><?= (int)$stat['done'] ?></div></div>
             </div>
             <form class="toolbar" method="get">
-                <div class="group"><label class="label" for="dtype">กรองอุปกรณ์:</label><select class="select" id="dtype" name="dtype" onchange="this.form.page.value=1; this.form.submit()"><?php foreach($dtypes as $slug=>$label): ?><option value="<?= h($slug) ?>" <?= $filterDtype===$slug?'selected':'' ?>><?= h($label) ?></option><?php endforeach; ?></select></div>
-                <div class="group"><label class="label" for="status">กรองสถานะ:</label><select class="select" id="status" name="status" onchange="this.form.page.value=1; this.form.submit()"><option value="all" <?= $filterStatus==='all' ? 'selected' : '' ?>>ทั้งหมด</option><option value="new" <?= $filterStatus==='new' ? 'selected' : '' ?>>❌ แจ้งซ่อม</option><option value="in_progress" <?= $filterStatus==='in_progress' ? 'selected' : '' ?>>🔧 กำลังซ่อม</option><option value="done" <?= $filterStatus==='done' ? 'selected' : '' ?>>✅ ซ่อมเสร็จ</option></select></div>
+                <div class="group">
+                    <label class="label" for="dtype">กรองอุปกรณ์:</label>
+                    <select class="select" id="dtype" name="dtype" onchange="this.form.page.value=1; this.form.submit()">
+                        <?php foreach($dtypes as $slug=>$label): ?>
+                            <option value="<?= h($slug) ?>" <?= $filterDtype===$slug?'selected':'' ?>><?= h($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="group">
+                    <label class="label" for="status">กรองสถานะ:</label>
+                    <select class="select" id="status" name="status" onchange="this.form.page.value=1; this.form.submit()">
+                        <option value="all"         <?= $filterStatus==='all' ? 'selected' : '' ?>>ทั้งหมด</option>
+                        <option value="new"         <?= $filterStatus==='new' ? 'selected' : '' ?>>❌ แจ้งซ่อม</option>
+                        <option value="in_progress" <?= $filterStatus==='in_progress' ? 'selected' : '' ?>>🔧 กำลังซ่อม</option>
+                        <option value="done"        <?= $filterStatus==='done' ? 'selected' : '' ?>>✅ ซ่อมเสร็จ</option>
+                    </select>
+                </div>
                 <input type="hidden" name="page" value="<?= (int)$page ?>">
             </form>
 
             <div class="table-wrap">
                 <table>
-                    <colgroup><col style="width: 8%;"><col style="width: 25%;"><col style="width: 22%;"><col style="width: 25%;"><col style="width: 20%;"></colgroup>
-                    <thead><tr><th class="tc">คิว</th><th>ชื่อผู้แจ้ง</th><th class="tc">สถานะ</th><th class="tc">เปลี่ยนสถานะ</th><th class="tc">รายละเอียด</th></tr></thead>
+                    <colgroup>
+                        <col style="width: 8%;">
+                        <col style="width: 25%;">
+                        <col style="width: 22%;">
+                        <col style="width: 25%;">
+                        <col style="width: 20%;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th class="tc">คิว</th>
+                            <th>ชื่อผู้แจ้ง</th>
+                            <th class="tc">สถานะ</th>
+                            <th class="tc">เปลี่ยนสถานะ</th>
+                            <th class="tc">รายละเอียด</th>
+                            </tr>
+                    </thead>
                     <tbody>
                     <?php if ($result->num_rows === 0): ?>
                         <tr><td colspan="5" class="empty">ยังไม่มีงานที่ได้รับมอบหมาย</td></tr>
@@ -261,7 +320,6 @@ $result = $stmt->get_result();
                                 $reportTime = h(@date('d/m/Y H:i', strtotime($row['report_date'])) ?: $row['report_date']);
                             ?>
                             <tr
-                                data-id="<?= (int)$row['id'] ?>"
                                 data-queue="<?= h($row['queue_number']) ?>"
                                 data-username="<?= h($row['username']) ?>"
                                 data-device="<?= h($row['device_type']) ?>"
@@ -270,174 +328,103 @@ $result = $stmt->get_result();
                                 data-phone="<?= h($row['phone_number']) ?>"
                                 data-time="<?= $reportTime ?>"
                                 data-issue="<?= h($row['issue_description']) ?>"
+                                data-id="<?= (int)$row['id'] ?>"
                             >
                                 <td class="tc" data-label="คิว"><?= h($row['queue_number']) ?></td>
                                 <td class="ellipsis" data-label="ชื่อผู้แจ้ง" title="<?= h($row['username']) ?>"><?= h($row['username']) ?></td>
-                                <td class="tc" data-label="สถานะ"><span class="badge <?= $s ?>"><?= statusIcon($s) ?> <?= h(statusText($s)) ?></span></td>
-                                <td data-label="เปลี่ยนสถานะ">
+                                <td class="tc" data-label="สถานะ">
+                                    <span class="badge <?= $s ?>"><?= statusIcon($s) ?> <?= h(statusText($s)) ?></span>
+                                </td>
+                                <td data-label="จัดการ">
                                     <div class="action-cell">
-                                        <?php if ($s !== 'done'): // แสดงปุ่มเฉพาะงานที่ยังไม่เสร็จ ?>
-                                            <button class="btn-update-status">อัปเดตสถานะ</button>
+                                        <?php if ($s !== 'done'): ?>
+                                            <button class="btn-finish-job">เสร็จสิ้น</button>
+                                        <?php else: ?>
+                                            <button class="btn-finish-job" disabled>ปิดงานแล้ว</button>
                                         <?php endif; ?>
                                     </div>
                                 </td>
-                                <td class="tc" data-label="รายละเอียด"><button class="btn-details">รายละเอียด</button></td>
-                            </tr>
+                                <td class="tc" data-label="รายละเอียด">
+                                    <button class="btn-details">รายละเอียดเพิ่มเติม</button>
+                                </td>
+                                </tr>
                         <?php endwhile; ?>
                     <?php endif; ?>
                     </tbody>
                 </table>
             </div>
 
-            <nav class="pager" aria-label="เปลี่ยนหน้า"><?php $prev = $page - 1; $next = $page + 1; ?><a class="<?= $page<=1 ? 'disabled':'' ?>" href="<?= $page<=1 ? '#' : h(pageUrl($prev,$filterStatus,$filterDtype)) ?>" aria-label="ก่อนหน้า">«</a><?php $window = 2;$start = max(1, $page - $window);$end   = min($totalPages, $page + $window);if ($start > 1){echo '<a href="'.h(pageUrl(1,$filterStatus,$filterDtype)).'">1</a>';if ($start > 2) echo '<span class="disabled">…</span>';}for($p=$start; $p<=$end; $p++){if ($p == $page) echo '<span class="active">'.$p.'</span>';else echo '<a href="'.h(pageUrl($p,$filterStatus,$filterDtype)).'">'.$p.'</a>';}if ($end < $totalPages){if ($end < $totalPages-1) echo '<span class="disabled">…</span>';echo '<a href="'.h(pageUrl($totalPages,$filterStatus,$filterDtype)).'">'.$totalPages.'</a>';} ?><a class="<?= $page>=$totalPages ? 'disabled':'' ?>" href="<?= $page>=$totalPages ? '#' : h(pageUrl($next,$filterStatus,$filterDtype)) ?>" aria-label="ถัดไป">»</a><span class="disabled" style="border:none">หน้า <?= $page ?> / <?= $totalPages ?> • ทั้งหมด <?= number_format($totalRows) ?> รายการ</span></nav>
+            <nav class="pager" aria-label="เปลี่ยนหน้า">
+                <?php $prev = $page - 1; $next = $page + 1; ?>
+                <a class="<?= $page<=1 ? 'disabled':'' ?>" href="<?= $page<=1 ? '#' : h(pageUrl($prev,$filterStatus,$filterDtype)) ?>" aria-label="ก่อนหน้า">«</a>
+                <?php
+                    $window = 2; $start = max(1, $page - $window); $end = min($totalPages, $page + $window);
+                    if ($start > 1){ echo '<a href="'.h(pageUrl(1,$filterStatus,$filterDtype)).'">1</a>'; if ($start > 2) echo '<span class="disabled">…</span>'; }
+                    for($p=$start; $p<=$end; $p++){ if ($p == $page) echo '<span class="active">'.$p.'</span>'; else echo '<a href="'.h(pageUrl($p,$filterStatus,$filterDtype)).'">'.$p.'</a>'; }
+                    if ($end < $totalPages){ if ($end < $totalPages-1) echo '<span class="disabled">…</span>'; echo '<a href="'.h(pageUrl($totalPages,$filterStatus,$filterDtype)).'">'.$totalPages.'</a>'; }
+                ?>
+                <a class="<?= $page>=$totalPages ? 'disabled':'' ?>" href="<?= $page>=$totalPages ? '#' : h(pageUrl($next,$filterStatus,$filterDtype)) ?>" aria-label="ถัดไป">»</a>
+                <span class="disabled" style="border:none">หน้า <?= $page ?> / <?= $totalPages ?> • ทั้งหมด <?= number_format($totalRows) ?> รายการ</span>
+            </nav>
 
         </section>
-        <div class="footer" style="text-align:center;color:#667085;margin-top:18px">© <?= date('Y') ?> TechFix — ระบบแจ้งซ่อมคอมพิวเตอร์</div>
+
+        <div class="footer" style="text-align:center;color:#667085;margin-top:18px">
+            © <?= date('Y') ?> TechFix — ระบบแจ้งซ่อมคอมพิวเตอร์
+        </div>
     </div>
 </div>
 
 <div id="detailsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-content"><header class="modal-header"><h2 id="modalTitle" class="modal-title">รายละเอียดการแจ้งซ่อม</h2><button class="modal-close" aria-label="ปิด">&times;</button></header><main id="modalBody" class="modal-body"></main></div>
-</div>
-
-<div id="updateStatusModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="updateModalTitle">
     <div class="modal-content">
         <header class="modal-header">
-            <h2 id="updateModalTitle" class="modal-title">ยืนยันการซ่อมเสร็จ</h2>
+            <h2 id="modalTitle" class="modal-title">รายละเอียดการแจ้งซ่อม</h2>
             <button class="modal-close" aria-label="ปิด">&times;</button>
         </header>
-        <main id="updateModalBody" class="modal-body">
-            </main>
+        <main id="modalBody" class="modal-body"></main>
+    </div>
+</div>
+
+<div id="finishModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="finishModalTitle">
+    <div class="modal-content">
+        <header class="modal-header">
+            <h2 id="finishModalTitle" class="modal-title">ยืนยันการซ่อมเสร็จ</h2>
+            <button class="modal-close" aria-label="ปิด">&times;</button>
+        </header>
+        <main id="finishModalBody" class="modal-body" style="grid-template-columns: 1fr; text-align: center; font-size: 1.1rem; padding-top: 30px; padding-bottom: 30px;">
+            คุณต้องการยืนยันว่าได้ดำเนินการซ่อมงานนี้เสร็จสิ้นแล้วใช่หรือไม่?
+        </main>
         <footer class="modal-footer">
             <form method="POST" action="update_status.php" style="display: contents;">
-                <input type="hidden" name="id" id="update_report_id" value="">
+                <input type="hidden" name="id" id="finishJobId" value="">
+                <input type="hidden" name="status" value="done">
                 <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
-                <button type="button" class="btn-cancel">ยกเลิก</button>
-                <button type="submit" class="btn-confirm-done">✅ ยืนยันซ่อมเสร็จ</button>
+                
+                <button type="button" class="btn-cancel modal-close-finish">ยกเลิก</button>
+                <button type="submit" class="btn-confirm-finish">✅ ยืนยันซ่อมเสร็จ</button>
             </form>
         </footer>
     </div>
 </div>
 
-<div id="liveNotice" class="live-notice" role="status" aria-live="polite">มีการอัปเดตใหม่ กำลังโหลดข้อมูล...</div>
-<style>.live-notice{position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);background: #0b63c8; color: #fff; padding: 10px 14px; border-radius: 12px;box-shadow: 0 10px 24px rgba(15,40,80,.25); font-weight: 800;display: none; z-index: 2000;}</style>
-
-<script>
-    const PING_URL = 'changes_ping.php?role=technician'; const POLL_MS  = 5000; let lastSig = null;
-    async function pingChanges() { try { const res = await fetch(PING_URL, { cache: 'no-store' }); if (!res.ok) return; const j = await res.json(); if (!j || !j.sig) return; if (lastSig === null) { lastSig = j.sig; return; } if (j.sig !== lastSig) { lastSig = j.sig; const n = document.getElementById('liveNotice'); if (n) n.style.display = 'inline-flex'; setTimeout(() => location.reload(), 800); } } catch (e) {} }
-    let pollTimer = setInterval(pingChanges, POLL_MS); window.addEventListener('load', pingChanges); document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') pingChanges(); });
-</script>
-
-<script>
-    // --- โค้ดสำหรับเมนู (เหมือนเดิม) ---
-    function toggleNavMenu(btn){const menu=document.getElementById('navMenu');const show=!menu.classList.contains('show');menu.classList.toggle('show',show);btn.classList.toggle('active',show);btn.setAttribute('aria-expanded',show?'true':'false');menu.setAttribute('aria-hidden',show?'false':'true')}
-    document.addEventListener('click',e=>{const menu=document.getElementById('navMenu');const btn=document.querySelector('.hb-btn');if(!menu)return;if(!menu.contains(e.target)&&!btn.contains(e.target)){menu.classList.remove('show');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'){const menu=document.getElementById('navMenu');const btn=document.querySelector('.hb-btn');if(menu&&menu.classList.contains('show')){menu.classList.remove('show');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}}});
-    
-    // --- โค้ดสำหรับควบคุม Modal ทั้งสอง ---
-    document.addEventListener('DOMContentLoaded',()=>{
-        const table = document.querySelector('.table-wrap');
-
-        // Modal 1: สำหรับดูรายละเอียด
-        const detailsModal = {
-            overlay: document.getElementById('detailsModal'),
-            body: document.getElementById('modalBody'),
-            title: document.getElementById('modalTitle'),
-            open: (data) => {
-                detailsModal.title.textContent=`รายละเอียดคิว: ${data.queue} (คุณ ${data.username})`;
-                detailsModal.body.innerHTML=`
-                    <span class="label">อุปกรณ์:</span><span class="value">${data.device||'-'}</span>
-                    <span class="label">หมายเลขเครื่อง:</span><span class="value">${data.serial||'-'}</span>
-                    <span class="label">ห้อง/ชั้น:</span><span class="value">${data.room||'-'}</span>
-                    <span class="label">เบอร์โทร:</span><span class="value">${data.phone||'-'}</span>
-                    <span class="label">เวลาแจ้ง:</span><span class="value">${data.time||'-'}</span>
-                    <span class="label" style="grid-column: 1 / -1; margin-top: 8px;"><b>ปัญหาที่แจ้ง:</b></span>
-                    <span class="value" style="grid-column: 1 / -1; margin-top: -10px; background: #f5f9ff; padding: 10px; border-radius: 8px;">${data.issue||'-'}</span>`;
-                detailsModal.overlay.classList.add('show');
-            },
-            close: () => detailsModal.overlay.classList.remove('show')
-        };
-        
-        // ===== จุดที่แก้ไข: เพิ่ม Modal 2 สำหรับอัปเดตสถานะ =====
-        const updateStatusModal = {
-            overlay: document.getElementById('updateStatusModal'),
-            body: document.getElementById('updateModalBody'),
-            title: document.getElementById('updateModalTitle'),
-            reportIdInput: document.getElementById('update_report_id'),
-            open: (data) => {
-                updateStatusModal.title.textContent = `ยืนยันงานซ่อมคิว: ${data.queue}`;
-                updateStatusModal.body.innerHTML = `
-                    <p style="grid-column: 1 / -1; text-align: center; margin: 0; font-size: 1.1rem;">
-                        คุณต้องการยืนยันว่างานแจ้งซ่อมสำหรับ <b>${data.username}</b> เสร็จสิ้นแล้วใช่หรือไม่?
-                    </p>
-                    <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid #eee; margin: 8px 0;">
-                    <span class="label">อุปกรณ์:</span><span class="value">${data.device||'-'}</span>
-                    <span class="label">ปัญหาที่แจ้ง:</span><span class="value" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${data.issue||'-'}</span>
-                `;
-                updateStatusModal.reportIdInput.value = data.id; // ใส่ ID ลงใน form
-                updateStatusModal.overlay.classList.add('show');
-            },
-            close: () => updateStatusModal.overlay.classList.remove('show')
-        };
-        
-        // Event Listener หลักสำหรับตาราง
-        if (table) {
-            table.addEventListener('click', e => {
-                const row = e.target.closest('tr');
-                if (!row) return;
-
-                if (e.target.classList.contains('btn-details')) {
-                    detailsModal.open(row.dataset);
-                }
-                
-                // ===== จุดที่แก้ไข: เพิ่ม Event สำหรับปุ่มอัปเดต =====
-                if (e.target.classList.contains('btn-update-status')) {
-                    updateStatusModal.open(row.dataset);
-                }
-            });
-        }
-
-        // Event Listeners สำหรับปิด Modal
-        detailsModal.overlay.addEventListener('click', e => { if (e.target === detailsModal.overlay || e.target.closest('.modal-close')) detailsModal.close(); });
-        updateStatusModal.overlay.addEventListener('click', e => { if (e.target === updateStatusModal.overlay || e.target.closest('.modal-close') || e.target.classList.contains('btn-cancel')) updateStatusModal.close(); });
-        
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') {
-                if (detailsModal.overlay.classList.contains('show')) detailsModal.close();
-                if (updateStatusModal.overlay.classList.contains('show')) updateStatusModal.close();
-            }
-        });
-    });
-</script>
-
-</body>
-</html>
 
 <div id="liveNotice" class="live-notice" role="status" aria-live="polite">
     มีการอัปเดตใหม่ กำลังโหลดข้อมูล...
 </div>
 <style>
-    .live-notice{
-        position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
-        background: #0b63c8; color: #fff; padding: 10px 14px; border-radius: 12px;
-        box-shadow: 0 10px 24px rgba(15,40,80,.25); font-weight: 800;
-        display: none; z-index: 2000;
-    }
+    .live-notice{position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);background: #0b63c8; color: #fff; padding: 10px 14px; border-radius: 12px;box-shadow: 0 10px 24px rgba(15,40,80,.25); font-weight: 800;display: none; z-index: 2000;}
 </style>
 
 <script>
-    // --- โค้ดสำหรับ Auto Update ---
     const PING_URL = 'changes_ping.php?role=technician';
     const POLL_MS  = 5000;
     let lastSig = null;
-
     async function pingChanges() {
         try {
             const res = await fetch(PING_URL, { cache: 'no-store' });
             if (!res.ok) return;
             const j = await res.json();
             if (!j || !j.sig) return;
-
             if (lastSig === null) { lastSig = j.sig; return; }
             if (j.sig !== lastSig) {
                 lastSig = j.sig;
@@ -455,19 +442,78 @@ $result = $stmt->get_result();
 </script>
 
 <script>
-    // --- โค้ดสำหรับเมนูและ Modal ---
+    // --- โค้ดสำหรับเมนู (เหมือนเดิม) ---
     function toggleNavMenu(btn){const menu=document.getElementById('navMenu');const show=!menu.classList.contains('show');menu.classList.toggle('show',show);btn.classList.toggle('active',show);btn.setAttribute('aria-expanded',show?'true':'false');menu.setAttribute('aria-hidden',show?'false':'true')}
     document.addEventListener('click',e=>{const menu=document.getElementById('navMenu');const btn=document.querySelector('.hb-btn');if(!menu)return;if(!menu.contains(e.target)&&!btn.contains(e.target)){menu.classList.remove('show');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}});
     document.addEventListener('keydown',e=>{if(e.key==='Escape'){const menu=document.getElementById('navMenu');const btn=document.querySelector('.hb-btn');if(menu&&menu.classList.contains('show')){menu.classList.remove('show');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');menu.setAttribute('aria-hidden','true')}}});
-    document.addEventListener('DOMContentLoaded',()=>{const modalOverlay=document.getElementById('detailsModal');const modalBody=document.getElementById('modalBody');const modalTitle=document.getElementById('modalTitle');const table=document.querySelector('.table-wrap');const openModal=data=>{modalTitle.textContent=`รายละเอียดคิว: ${data.queue} (คุณ ${data.username})`;modalBody.innerHTML=`
-    <span class="label">อุปกรณ์:</span><span class="value">${data.device||'-'}</span>
-    <span class="label">หมายเลขเครื่อง:</span><span class="value">${data.serial||'-'}</span>
-    <span class="label">ห้อง/ชั้น:</span><span class="value">${data.room||'-'}</span>
-    <span class="label">เบอร์โทร:</span><span class="value">${data.phone||'-'}</span>
-    <span class="label">เวลาแจ้ง:</span><span class="value">${data.time||'-'}</span>
-    <span class="label" style="grid-column: 1 / -1; margin-top: 8px;"><b>ปัญหาที่แจ้ง:</b></span>
-    <span class="value" style="grid-column: 1 / -1; margin-top: -10px; background: #f5f9ff; padding: 10px; border-radius: 8px;">${data.issue||'-'}</span>`;modalOverlay.classList.add('show')};const closeModal=()=>{modalOverlay.classList.remove('show')};if(table){table.addEventListener('click',e=>{if(e.target.classList.contains('btn-details')){const row=e.target.closest('tr');if(!row)return;const reportData={queue:row.dataset.queue,username:row.dataset.username,device:row.dataset.device,serial:row.dataset.serial,room:row.dataset.room,phone:row.dataset.phone,time:row.dataset.time,issue:row.dataset.issue,};openModal(reportData)}})}
-    modalOverlay.addEventListener('click',e=>{if(e.target===modalOverlay||e.target.classList.contains('modal-close')){closeModal()}});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modalOverlay.classList.contains('show')){closeModal()}})});
+    
+    // --- โค้ดสำหรับ Modal (อัปเดตใหม่) ---
+    document.addEventListener('DOMContentLoaded',()=>{
+        const table = document.querySelector('.table-wrap');
+
+        // --- 1. Modal ดูรายละเอียด (Details) ---
+        const detailsModal = document.getElementById('detailsModal');
+        const detailsBody = document.getElementById('modalBody');
+        const detailsTitle = document.getElementById('modalTitle');
+        
+        const openDetailsModal = (data) => {
+            detailsTitle.textContent = `รายละเอียดคิว: ${data.queue} (คุณ ${data.username})`;
+            detailsBody.innerHTML = `
+            <span class="label">อุปกรณ์:</span><span class="value">${data.device||'-'}</span>
+            <span class="label">หมายเลขเครื่อง:</span><span class="value">${data.serial||'-'}</span>
+            <span class="label">ห้อง/ชั้น:</span><span class="value">${data.room||'-'}</span>
+            <span class="label">เบอร์โทร:</span><span class="value">${data.phone||'-'}</span>
+            <span class="label">เวลาแจ้ง:</span><span class="value">${data.time||'-'}</span>
+            <span class="label" style="grid-column: 1 / -1; margin-top: 8px;"><b>ปัญหาที่แจ้ง:</b></span>
+            <span class="value" style="grid-column: 1 / -1; margin-top: -10px; background: #f5f9ff; padding: 10px; border-radius: 8px;">${data.issue||'-'}</span>`;
+            detailsModal.classList.add('show');
+        };
+        const closeDetailsModal = () => detailsModal.classList.remove('show');
+        
+        detailsModal.addEventListener('click',e=>{if(e.target===detailsModal||e.target.classList.contains('modal-close')){closeDetailsModal()}});
+
+        // --- 2. Modal ยืนยันปิดงาน (Finish) ---
+        const finishModal = document.getElementById('finishModal');
+        const finishTitle = document.getElementById('finishModalTitle');
+        const finishBody = document.getElementById('finishModalBody');
+        const finishJobIdInput = document.getElementById('finishJobId');
+
+        const openFinishModal = (data) => {
+            finishTitle.textContent = `ยืนยันปิดงาน คิว: ${data.queue}`;
+            finishBody.innerHTML = `คุณต้องการยืนยันว่าได้ดำเนินการซ่อมงานของ <b>คุณ ${data.username}</b> เสร็จสิ้นแล้วใช่หรือไม่?`;
+            finishJobIdInput.value = data.id; // ใส่ ID ลงใน hidden input
+            finishModal.classList.add('show');
+        };
+        const closeFinishModal = () => finishModal.classList.remove('show');
+        
+        finishModal.addEventListener('click',e=>{if(e.target===finishModal||e.target.classList.contains('modal-close')||e.target.classList.contains('modal-close-finish')){closeFinishModal()}});
+
+        // --- 3. ตัวจัดการ Event หลักในตาราง ---
+        if(table){
+            table.addEventListener('click', e => {
+                const row = e.target.closest('tr');
+                if (!row) return;
+
+                // ถ้าคลิกปุ่ม "รายละเอียด"
+                if(e.target.classList.contains('btn-details')){
+                    openDetailsModal(row.dataset);
+                }
+                
+                // ถ้าคลิกปุ่ม "เสร็จสิ้น"
+                if(e.target.classList.contains('btn-finish-job')){
+                    openFinishModal(row.dataset);
+                }
+            });
+        }
+
+        // --- 4. จัดการปุ่ม Esc (ปิด Modal ตัวที่เปิดอยู่) ---
+        document.addEventListener('keydown',e=>{
+            if(e.key==='Escape'){
+                if(detailsModal.classList.contains('show')) closeDetailsModal();
+                if(finishModal.classList.contains('show')) closeFinishModal();
+            }
+        });
+    });
 </script>
 
 </body>
