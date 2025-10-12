@@ -130,12 +130,12 @@
     <nav class="nav-actions">
     <a href="technician_login.php" class="btn btn-admin outline" aria-label="เข้าสู่ระบบช่างเทคนิค">
         <i class="fas fa-wrench" aria-hidden="true"></i>
-        Technician
+        TECHNICIAN
     </a>
 
     <a href="admin_login.php" class="btn btn-admin" aria-label="เข้าสู่ระบบแอดมิน">
         <i class="fas fa-user-shield" aria-hidden="true"></i>
-        Administrator
+        ADMIN
     </a>
 </nav>
   </header>

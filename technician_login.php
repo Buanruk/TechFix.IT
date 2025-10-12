@@ -159,10 +159,6 @@ unset($_SESSION['error']); // ลบออกหลังแสดง
 
         <button class="btn" type="submit">เข้าสู่ระบบ</button>
       </form>
-
-      <div class="foot">
-    <a href="register.php">ยังไม่มีบัญชี? <a href="register.php">สมัครสมาชิกที่นี่</a> | <a href="index.php">กลับหน้าแรก</a>
-    </div>
   </div>
 
   <script>

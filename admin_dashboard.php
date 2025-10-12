@@ -1,10 +1,21 @@
 <?php
+// ===== 1. เริ่ม Session และตรวจสอบการ Login (สำคัญมาก) =====
+session_start();
+if (!isset($_SESSION['admin_id'])) {
+    header('Location: admin_login.php');
+    exit();
+}
+
+// ===== 2. ตรวจสอบข้อความแจ้งเตือน (Success Message) =====
+$successMsg = $_SESSION['success'] ?? '';
+unset($_SESSION['success']); // ลบออกหลังจากดึงค่ามาแล้ว
+
 // ===== DB =====
 $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
 if ($conn->connect_error) { die("DB Error"); }
 $conn->set_charset("utf8");
 
-// ===== ส่วนที่แก้ไข: ดึงรายชื่อช่างจากฐานข้อมูล =====
+// ===== ดึงรายชื่อช่างจากฐานข้อมูล =====
 $technician_list = [];
 $tech_sql = "SELECT id, fullname FROM technicians ORDER BY fullname ASC";
 $tech_result = $conn->query($tech_sql);
@@ -13,9 +24,8 @@ if ($tech_result && $tech_result->num_rows > 0) {
         $technician_list[] = $tech_row;
     }
 }
-// ===============================================
 
-// ===== Map ประเภทอุปกรณ์ (slug -> label แสดงผล) และ regex จับคำใน device_type =====
+// (ส่วนที่เหลือของ PHP เหมือนเดิมทั้งหมด)
 $dtypes = [
     'all'     => 'อุปกรณ์ทั้งหมด',
     'pc'      => 'ปัญหาเกี่ยวกับคอมพิวเตอร์',
@@ -24,7 +34,6 @@ $dtypes = [
     'network' => 'ปัญหาเกี่ยวกับเครือข่าย',
     'tv'      => 'ปัญหาเกี่ยวกับ TV',
 ];
-// รองรับไทย/อังกฤษ/คำใกล้เคียง
 $regexMap = [
     'pc'      => '(คอม|computer|pc|desktop)',
     'printer' => '(ปริ้น|พรินท์|printer|พิมพ์)',
@@ -32,27 +41,19 @@ $regexMap = [
     'network' => '(เครือข่าย|network|lan|wifi|router|switch)',
     'tv'      => '(tv|ทีวี|monitor|จอภาพ)',
 ];
-
 function findTechSlug($assignedName, $TECHS){
     foreach ($TECHS as $slug => $t) {
         if ($assignedName && mb_strpos($assignedName, $t['name']) !== false) return $slug;
     }
     return '';
 }
-
-// ===== รับค่า “สถานะ” และ “ประเภทอุปกรณ์” =====
 $filterStatus = $_GET['status'] ?? 'all';
 if (!in_array($filterStatus, ['all','new','in_progress','done'], true)) $filterStatus = 'all';
-
 $filterDtype = $_GET['dtype'] ?? 'all';
 if (!in_array($filterDtype, array_keys($dtypes), true)) $filterDtype = 'all';
-
-// ===== ตั้งค่าการแบ่งหน้า =====
 $perPage = 10;
 $page    = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $offset  = ($page - 1) * $perPage;
-
-// ===== ฟังก์ชันช่วย =====
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 function statusText($s){
     return match($s){
@@ -74,23 +75,17 @@ function pageUrl($p, $status, $dtype){
     $p = max(1,(int)$p);
     return '?status='.urlencode($status).'&dtype='.urlencode($dtype).'&page='.$p;
 }
-
-/** สร้าง WHERE + types + values สำหรับ status + dtype (REGEXP) */
 function build_where_and_params($status, $dtype, $regexMap){
     $wheres = []; $types = ''; $vals = [];
-
     if ($status !== 'all'){ $wheres[] = "status = ?"; $types .= "s"; $vals[] = $status; }
     if ($dtype  !== 'all' && isset($regexMap[$dtype])){
         $wheres[] = "LOWER(device_type) REGEXP ?";
         $types   .= "s";
         $vals[]   = strtolower($regexMap[$dtype]);
     }
-
     $whereSQL = $wheres ? ("WHERE ".implode(" AND ", $wheres)) : "";
     return [$whereSQL, $types, $vals];
 }
-
-// ===== สรุปจำนวนแต่ละสถานะ (การ์ดสรุป) — รวมทุกประเภทอุปกรณ์ (ไม่ผูกกับ dtype) =====
 $stat = ['new'=>0,'in_progress'=>0,'done'=>0,'all'=>0];
 $qr = $conn->query("SELECT status, COUNT(*) AS c FROM device_reports GROUP BY status");
 if ($qr) {
@@ -100,8 +95,6 @@ if ($qr) {
         $stat['all'] += (int)$r['c'];
     }
 }
-
-// ===== นับจำนวนตามตัวกรอง (status + dtype) เพื่อคำนวณจำนวนหน้า =====
 [$whereCnt, $typesCnt, $valsCnt] = build_where_and_params($filterStatus, $filterDtype, $regexMap);
 $countSql  = "SELECT COUNT(*) AS total FROM device_reports $whereCnt";
 $countStmt = $conn->prepare($countSql);
@@ -111,14 +104,11 @@ $countRes  = $countStmt->get_result();
 $totalRows = (int)($countRes->fetch_assoc()['total'] ?? 0);
 $totalPages = max(1, (int)ceil($totalRows / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
-
-// ===== โหลดรายการตามตัวกรอง + LIMIT/OFFSET =====
 [$whereSel, $typesSel, $valsSel] = build_where_and_params($filterStatus, $filterDtype, $regexMap);
 $selSql = "SELECT * FROM device_reports $whereSel ORDER BY id DESC LIMIT ? OFFSET ?";
 $typesSel .= "ii";
 $valsSel[] = $perPage;
 $valsSel[] = $offset;
-
 $stmt = $conn->prepare($selSql);
 $stmt->bind_param($typesSel, ...$valsSel);
 $stmt->execute();
@@ -200,15 +190,32 @@ $result = $stmt->get_result();
     .panel{border-radius:var(--radius);border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
     .panel-head{padding:18px 22px;background:linear-gradient(180deg,rgba(78,169,255,.16),rgba(30,136,229,.10))}
     .title{margin:0;text-align:center;color:#0b2440;font-weight:900}
+    
+    /* ===== 3. เพิ่ม CSS สำหรับกล่องข้อความแจ้งเตือน ===== */
+    .alert-box {
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        border-radius: 14px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: fadeInDown .4s ease;
+    }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .alert-box.success {
+        background-color: #e9f9ec;
+        border: 1px solid #d1f3d8;
+        color: #2e7d32;
+    }
+    .alert-box svg { flex: 0 0 20px; }
 
-    /* KPI */
+    /* (ส่วนที่เหลือของ CSS เหมือนเดิม) */
     .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px 20px 8px}
     .kpi{border:1px solid var(--line);border-radius:16px;padding:12px 14px;background:#fff;box-shadow:0 10px 24px rgba(15,40,80,.06)}
     .kpi h4{margin:0 0 4px 0;font-size:13px;color:#0a2540}
     .kpi .num{font-size:26px;font-weight:900}
     .kpi.new .num{color:var(--red)} .kpi.progress .num{color:var(--blue-strong)} .kpi.done .num{color:var(--green)}
-
-    /* Filters */
     .toolbar{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 18px; color:#667085; flex-wrap:wrap}
     .group{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
     .label{display:flex; align-items:center; gap:8px; font-weight:800; color:#0a2540; letter-spacing:.2px}
@@ -224,8 +231,6 @@ $result = $stmt->get_result();
     }
     .select:hover{ transform:translateY(-1px); box-shadow:0 10px 22px rgba(10,37,64,.10) }
     .select:focus{ border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.18) }
-    
-    /* ===== Table ===== */
     .table-wrap{background:#fff;border-top:1px solid var(--line);overflow-x:auto}
     table{ width:100%; border-collapse:separate; border-spacing:0; font-size:14.5px;}
     thead th{position:sticky; top:0; z-index:2; background:linear-gradient(180deg,#f7fbff 0,#eef6ff 100%); color:#0f3a66; font-weight:800; letter-spacing:.2px; padding:14px 16px; border-bottom:1px solid var(--line); text-align:left;}
@@ -234,14 +239,10 @@ $result = $stmt->get_result();
     tbody tr:hover td{background:#f3f8ff}
     .tc{text-align:center}
     .ellipsis{max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-
-    /* Badge */
     .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-size:13px;font-weight:800;border:1px solid transparent}
     .badge.new{background:#ffecec;color:var(--red);border-color:#ffd6d6}
     .badge.in_progress{background:#eef5ff;color:#0b63c8;border-color:#d6eaff}
     .badge.done{background:#e9f9ec;color:#2e7d32;border-color:#d1f3d8}
-
-    /* Select & Buttons */
     .status-select{padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:700;cursor:pointer; max-width: 150px;}
     .status-select:focus{border-color:#1e88e5;box-shadow:0 0 0 3px rgba(30,136,229,.15)}
     .select-new{color:var(--red)} .select-progress{color:#0b63c8} .select-done{color:#2e7d32}
@@ -257,8 +258,6 @@ $result = $stmt->get_result();
     .action-cell { display: flex; flex-direction:column; align-items:center; gap: 8px; justify-content:center; }
     .action-cell form { margin: 0; }
     .empty{padding:28px;text-align:center;color:#667085}
-
-    /* ===== Pagination ===== */
     .pager{
         display:flex; align-items:center; justify-content:center; gap:8px;
         padding:16px; background:#fff; border-top:1px solid var(--line);
@@ -274,8 +273,6 @@ $result = $stmt->get_result();
     .pager a:hover{background:#f3f8ff; border-color:#d6eaff}
     .pager .active{background:#e8f2ff; border-color:#b9dcff; color:#0b63c8}
     .pager .disabled{opacity:.45; pointer-events:none}
-
-    /* ===== มือถือ ===== */
     @media (max-width:960px){
         thead{display:none} 
         tbody tr{
@@ -299,8 +296,6 @@ $result = $stmt->get_result();
         .select{min-width:unset; width:100%}
         .action-cell{ flex-direction:row; justify-content:center; }
     }
-
-    /* ===== สไตล์สำหรับ Modal ===== */
     .modal-overlay {
         position: fixed; top: 0; left: 0;
         width: 100%; height: 100%;
@@ -366,6 +361,13 @@ $result = $stmt->get_result();
                     </span>
                     หน้าหลัก
                 </a>
+                
+                <a href="admin_create_technician.php" class="menu-item" role="menuitem">
+                    <span class="menu-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="23" y1="11" x2="17" y2="11"></line><line x1="20" y1="8" x2="20" y2="14"></line></svg>
+                    </span>
+                    เพิ่มช่างใหม่
+                </a>
                 <a href="logout.php" class="menu-item logout" role="menuitem">
                     <span class="menu-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24"><path d="M15 12H3"></path><path d="M11 8l-4 4 4 4"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg>
@@ -379,6 +381,13 @@ $result = $stmt->get_result();
 
 <div class="shell">
     <div class="container">
+
+        <?php if (!empty($successMsg)): ?>
+            <div class="alert-box success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <span><?= htmlspecialchars($successMsg) ?></span>
+            </div>
+        <?php endif; ?>
         <section class="panel">
             <header class="panel-head"><h1 class="title">รายการแจ้งซ่อมทั้งหมด</h1></header>
             <div class="kpis">
@@ -436,7 +445,7 @@ $result = $stmt->get_result();
                                 $room = $row['room'] ?? ($row['floor'] ?? '');
                                 $s = in_array($row['status'], ['new','in_progress','done']) ? $row['status'] : 'new';
                                 $reportTime = h(@date('d/m/Y H:i', strtotime($row['report_date'])) ?: $row['report_date']);
-                                $assignedTech = $row['assigned_technician'] ?? null; // ดึงชื่อช่างที่ถูกมอบหมาย
+                                $assignedTech = $row['assigned_technician'] ?? null;
                             ?>
                             <tr
                                 data-queue="<?= h($row['queue_number']) ?>"
@@ -480,7 +489,6 @@ $result = $stmt->get_result();
                                 </td>
                                 <td class="tc" data-label="มอบหมายช่าง">
     <?php
-        // ดึง ID ของช่างที่ถูกมอบหมายจาก $row ปัจจุบัน (ถ้ามี)
         $assignedTechId = $row['technician_id'] ?? 0;
     ?>
     <form method="POST" action="assign_technician.php">
@@ -501,7 +509,7 @@ $result = $stmt->get_result();
         </select>
     </form>
 </td>
-                            </tr>
+                                </tr>
                         <?php endwhile; ?>
                     <?php endif; ?>
                     </tbody>
@@ -549,13 +557,11 @@ $result = $stmt->get_result();
             <button class="modal-close" aria-label="ปิด">&times;</button>
         </header>
         <main id="modalBody" class="modal-body">
-            </main>
+        </main>
     </div>
 </div>
 
-
 <script>
-// ===== Script สำหรับเมนู (ของเดิม) =====
 function toggleNavMenu(btn){
     const menu = document.getElementById('navMenu');
     const show = !menu.classList.contains('show');
@@ -583,15 +589,11 @@ document.addEventListener('keydown',(e)=>{
         }
     }
 });
-
-// ===== Script สำหรับ Modal (ของเดิม) =====
 document.addEventListener('DOMContentLoaded', () => {
     const modalOverlay = document.getElementById('detailsModal');
     const modalBody = document.getElementById('modalBody');
     const modalTitle = document.getElementById('modalTitle');
     const table = document.querySelector('.table-wrap');
-
-    // ฟังก์ชันเปิด Modal
     const openModal = (data) => {
         modalTitle.textContent = `รายละเอียดคิว: ${data.queue} (คุณ ${data.username})`;
         modalBody.innerHTML = `
@@ -605,20 +607,14 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         modalOverlay.classList.add('show');
     };
-
-    // ฟังก์ชันปิด Modal
     const closeModal = () => {
         modalOverlay.classList.remove('show');
     };
-
-    // ใช้ Event Delegation เพื่อดักจับการคลิกที่ปุ่ม "รายละเอียดเพิ่มเติม"
     if (table) {
         table.addEventListener('click', (e) => {
             if (e.target.classList.contains('btn-details')) {
                 const row = e.target.closest('tr');
                 if (!row) return;
-
-                // ดึงข้อมูลจาก data-attributes ของแถวนั้นๆ
                 const reportData = {
                     queue: row.dataset.queue,
                     username: row.dataset.username,
@@ -633,15 +629,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // ปิด Modal เมื่อคลิกที่พื้นหลังสีเทาหรือปุ่มปิด
     modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay || e.target.classList.contains('modal-close')) {
             closeModal();
         }
     });
-
-    // ปิด Modal เมื่อกดปุ่ม Esc
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && modalOverlay.classList.contains('show')) {
             closeModal();
