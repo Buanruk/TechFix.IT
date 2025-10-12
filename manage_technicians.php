@@ -1,22 +1,23 @@
 <?php
-// ===== 1. เริ่ม Session และตรวจสอบการ Login ของ Admin (สำคัญที่สุด) =====
 session_start();
 if (!isset($_SESSION['admin_id'])) {
     header('Location: admin_login.php');
     exit();
 }
 
-// ===== 2. เชื่อมต่อฐานข้อมูล =====
 $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
 if ($conn->connect_error) { die("DB Error"); }
 $conn->set_charset("utf8");
 
-// ===== 3. เขียน SQL เพื่อดึงข้อมูลสถิติของช่างแต่ละคน =====
-// ใช้ LEFT JOIN เพื่อให้ช่างที่ยังไม่มีงานแสดงขึ้นมาด้วย
+// SQL อัปเดต: เพิ่ม t.phone_number เข้ามา
 $sql = "
     SELECT
         t.id,
         t.fullname,
+        t.username,
+        t.phone_number,
+        t.created_at,
+        t.last_login,
         COUNT(dr.id) AS total_jobs,
         SUM(CASE WHEN dr.status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress_jobs,
         SUM(CASE WHEN dr.status = 'done' THEN 1 ELSE 0 END) AS done_jobs
@@ -25,7 +26,7 @@ $sql = "
     LEFT JOIN
         device_reports dr ON t.id = dr.technician_id
     GROUP BY
-        t.id, t.fullname
+        t.id
     ORDER BY
         t.fullname ASC;
 ";
@@ -38,11 +39,16 @@ if ($result) {
     }
 }
 
-// นับจำนวนช่างทั้งหมด
 $total_technicians = count($technician_stats);
 
-// ฟังก์ชัน h() สำหรับป้องกัน XSS
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+function format_thai_datetime($datetime) {
+    if (empty($datetime)) {
+        return '<span style="color:#999;">ยังไม่เคยเข้าระบบ</span>';
+    }
+    $ts = strtotime($datetime);
+    return date('d/m/Y H:i', $ts);
+}
 ?>
 <!doctype html>
 <html lang="th">
@@ -51,20 +57,10 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 <title>จัดการช่างเทคนิค - TechFix Admin</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-    :root{
-        --navy:#0b2440; --blue:#1e88e5; --bg:#f5f9ff; --card:#ffffff; --line:#e6effa; --text:#1f2937;
-        --green:#2e7d32; --red:#c62828; --blue-strong:#0b63c8;
-        --shadow:0 16px 40px rgba(10,37,64,.12);
-        --radius:20px;
-        --container:1680px;
-    }
+    /* CSS ทั้งหมดเหมือนเดิม */
+    :root{--navy:#0b2440; --blue:#1e88e5; --bg:#f5f9ff; --card:#ffffff; --line:#e6effa; --text:#1f2937;--green:#2e7d32; --red:#c62828; --blue-strong:#0b63c8;--shadow:0 16px 40px rgba(10,37,64,.12);--radius:20px;--container:1680px;}
     *{box-sizing:border-box} html,body{margin:0}
-    body{
-        font-family:system-ui,Segoe UI,Roboto,"TH Sarabun New",Tahoma,sans-serif;
-        color:var(--text);
-        background: radial-gradient(1200px 600px at 50% -240px,#eaf3ff 0,transparent 60%),
-                    linear-gradient(180deg,#fbfdff 0,var(--bg) 100%);
-    }
+    body{font-family:system-ui,Segoe UI,Roboto,"TH Sarabun New",Tahoma,sans-serif;color:var(--text);background: radial-gradient(1200px 600px at 50% -240px,#eaf3ff 0,transparent 60%),linear-gradient(180deg,#fbfdff 0,var(--bg) 100%);}
     .site-header{position:sticky;top:0;z-index:1000;background:linear-gradient(90deg,#0b3a6b 0,#1366b3 100%);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.12)}
     .navbar{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 30px;position:relative}
     .brand{display:flex;align-items:center;gap:12px;color:#fff;text-decoration:none}
@@ -105,6 +101,18 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
     tbody tr:hover td{background:#f3f8ff}
     .tc{text-align:center}
     .empty{padding:28px;text-align:center;color:#667085}
+    .btn-details{font-family:inherit;font-size:13px;font-weight:700;padding:6px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;transition:all .18s ease;margin:0;background:var(--blue);color:#fff;border-color:var(--blue);}
+    .btn-details:hover{background:#0b63c8;border-color:#0b63c8;}
+    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,40,80,.6);backdrop-filter:blur(5px);z-index:9998;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s ease}
+    .modal-overlay.show{opacity:1;pointer-events:auto}
+    .modal-content{background:#fff;border-radius:var(--radius);box-shadow:0 20px 50px rgba(0,0,0,.2);max-width:90vw;width:600px;max-height:85vh;display:flex;flex-direction:column;transform:scale(.95);transition:transform .25s ease}
+    .modal-overlay.show .modal-content{transform:scale(1)}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--line)}
+    .modal-title{margin:0;color:var(--navy);font-size:18px}
+    .modal-close{background:transparent;border:none;font-size:24px;line-height:1;cursor:pointer;color:#999}
+    .modal-body{padding:24px;overflow-y:auto;display:grid;grid-template-columns:150px 1fr;gap:14px}
+    .modal-body .label{font-weight:800;color:var(--navy)}
+    .modal-body .value{word-break:break-word;white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -124,27 +132,19 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
             </button>
             <div id="navMenu" class="nav-menu" role="menu" aria-hidden="true">
                  <a href="admin_dashboard.php" class="menu-item home" role="menuitem">
-                    <span class="menu-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg>
-                    </span>
+                    <span class="menu-icon"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg></span>
                     หน้าหลัก
                 </a>
                 <a href="manage_technicians.php" class="menu-item" role="menuitem">
-                    <span class="menu-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    </span>
+                    <span class="menu-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
                     จัดการช่าง
                 </a>
                 <a href="admin_create_technician.php" class="menu-item" role="menuitem">
-                    <span class="menu-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="23" y1="11" x2="17" y2="11"></line><line x1="20" y1="8" x2="20" y2="14"></line></svg>
-                    </span>
+                    <span class="menu-icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="23" y1="11" x2="17" y2="11"></line><line x1="20" y1="8" x2="20" y2="14"></line></svg></span>
                     เพิ่มช่างใหม่
                 </a>
                 <a href="logout.php" class="menu-item logout" role="menuitem">
-                    <span class="menu-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M15 12H3"></path><path d="M11 8l-4 4 4 4"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg>
-                    </span>
+                    <span class="menu-icon"><svg viewBox="0 0 24 24"><path d="M15 12H3"></path><path d="M11 8l-4 4 4 4"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg></span>
                     ออกจากระบบ
                 </a>
             </div>
@@ -157,7 +157,8 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
         <section class="panel">
             <header class="panel-head"><h1 class="title">ภาพรวมและจัดการช่างเทคนิค</h1></header>
             
-            <div class="kpis" style="grid-template-columns: 1fr;"> <div class="kpi total">
+            <div class="kpis" style="grid-template-columns: 1fr;">
+                <div class="kpi total">
                     <h4>ช่างเทคนิคทั้งหมดในระบบ</h4>
                     <div class="num"><?= $total_technicians ?> คน</div>
                 </div>
@@ -168,9 +169,9 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
                     <thead>
                         <tr>
                             <th>ชื่อ-สกุล ช่างเทคนิค</th>
-                            <th class="tc">งานที่ได้รับมอบหมาย</th>
-                            <th class="tc">กำลังซ่อม</th>
-                            <th class="tc">ซ่อมเสร็จ</th>
+                            <th class="tc">งานทั้งหมด</th>
+                            <th class="tc">เข้าสู่ระบบล่าสุด</th>
+                            <th class="tc">รายละเอียด</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -178,11 +179,23 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
                         <tr><td colspan="4" class="empty">ยังไม่มีข้อมูลช่างในระบบ</td></tr>
                     <?php else: ?>
                         <?php foreach($technician_stats as $tech): ?>
-                            <tr>
+                            <tr
+                                data-id="<?= h($tech['id']) ?>"
+                                data-fullname="<?= h($tech['fullname']) ?>"
+                                data-username="<?= h($tech['username']) ?>"
+                                data-phone_number="<?= h($tech['phone_number']) ?>"
+                                data-created_at="<?= h(format_thai_datetime($tech['created_at'])) ?>"
+                                data-last_login="<?= h(format_thai_datetime($tech['last_login'])) ?>"
+                                data-total_jobs="<?= (int)$tech['total_jobs'] ?>"
+                                data-in_progress_jobs="<?= (int)$tech['in_progress_jobs'] ?>"
+                                data-done_jobs="<?= (int)$tech['done_jobs'] ?>"
+                            >
                                 <td><strong><?= h($tech['fullname']) ?></strong></td>
                                 <td class="tc"><?= (int)$tech['total_jobs'] ?> งาน</td>
-                                <td class="tc" style="color: var(--blue-strong);"><?= (int)$tech['in_progress_jobs'] ?> งาน</td>
-                                <td class="tc" style="color: var(--green);"><?= (int)$tech['done_jobs'] ?> งาน</td>
+                                <td class="tc"><?= format_thai_datetime($tech['last_login']) ?></td>
+                                <td class="tc">
+                                    <button class="btn-details">ดูข้อมูล</button>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -197,8 +210,17 @@ function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
     </div>
 </div>
 
+<div id="detailsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-content">
+        <header class="modal-header">
+            <h2 id="modalTitle" class="modal-title">ข้อมูลช่างเทคนิค</h2>
+            <button class="modal-close" aria-label="ปิด">&times;</button>
+        </header>
+        <main id="modalBody" class="modal-body"></main>
+    </div>
+</div>
+
 <script>
-// Script สำหรับเมนู (เหมือนเดิม)
 function toggleNavMenu(btn){
     const menu = document.getElementById('navMenu');
     const show = !menu.classList.contains('show');
@@ -210,11 +232,59 @@ function toggleNavMenu(btn){
 document.addEventListener('click', (e)=>{
     const menu = document.getElementById('navMenu');
     const btn = document.querySelector('.hb-btn');
-    if (!menu) return;
-    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+    if (menu && !menu.contains(e.target) && !btn.contains(e.target)) {
         menu.classList.remove('show'); btn.classList.remove('active');
         btn.setAttribute('aria-expanded','false'); menu.setAttribute('aria-hidden','true');
     }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const modalOverlay = document.getElementById('detailsModal');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
+    const table = document.querySelector('.table-wrap');
+
+    const openModal = (data) => {
+        modalTitle.textContent = `ข้อมูลช่าง: ${data.fullname}`;
+        // อัปเดต Modal ให้แสดงเบอร์โทรด้วย
+        modalBody.innerHTML = `
+            <span class="label">ID:</span><span class="value">${data.id}</span>
+            <span class="label">ชื่อ-สกุล:</span><span class="value">${data.fullname}</span>
+            <span class="label">เบอร์โทร:</span><span class="value">${data.phone_number || '-'}</span>
+            <span class="label">Username:</span><span class="value">${data.username}</span>
+            <span class="label">วันที่สมัคร:</span><span class="value">${data.created_at}</span>
+            <span class="label">เข้าระบบล่าสุด:</span><span class="value">${data.last_login}</span>
+            <hr style="grid-column: 1 / -1; border: none; border-top: 1px solid #eee; margin: 5px 0;">
+            <span class="label">งานทั้งหมด:</span><span class="value"><b>${data.total_jobs}</b> งาน</span>
+            <span class="label">กำลังซ่อม:</span><span class="value" style="color:var(--blue-strong);">${data.in_progress_jobs} งาน</span>
+            <span class="label">ซ่อมเสร็จ:</span><span class="value" style="color:var(--green);">${data.done_jobs} งาน</span>
+        `;
+        modalOverlay.classList.add('show');
+    };
+
+    const closeModal = () => modalOverlay.classList.remove('show');
+
+    if (table) {
+        table.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-details')) {
+                const row = e.target.closest('tr');
+                if (row) {
+                    openModal(row.dataset);
+                }
+            }
+        });
+    }
+
+    modalOverlay.addEventListener('click', e => {
+        if (e.target === modalOverlay || e.target.classList.contains('modal-close')) {
+            closeModal();
+        }
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && modalOverlay.classList.contains('show')) {
+            closeModal();
+        }
+    });
 });
 </script>
 </body>

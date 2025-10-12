@@ -48,6 +48,12 @@ unset($_SESSION['error']); // ลบออกหลังแสดง
 
                 <div class="field">
                     <div class="input">
+                        <input name="phone_number" type="tel" placeholder="เบอร์โทรศัพท์ (ถ้ามี)">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="input">
                         <input name="username" type="text" placeholder="ตั้งชื่อผู้ใช้ (สำหรับ Login)" required>
                     </div>
                 </div>
