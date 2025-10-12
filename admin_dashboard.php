@@ -355,26 +355,33 @@ $result = $stmt->get_result();
                 <span></span><span></span><span></span>
             </button>
             <div id="navMenu" class="nav-menu" role="menu" aria-hidden="true">
-                <a href="index.php" class="menu-item home" role="menuitem">
-                    <span class="menu-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg>
-                    </span>
-                    หน้าหลัก
-                </a>
-                
-                <a href="admin_create_technician.php" class="menu-item" role="menuitem">
-                    <span class="menu-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="23" y1="11" x2="17" y2="11"></line><line x1="20" y1="8" x2="20" y2="14"></line></svg>
-                    </span>
-                    เพิ่มช่างใหม่
-                </a>
-                <a href="logout.php" class="menu-item logout" role="menuitem">
-                    <span class="menu-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M15 12H3"></path><path d="M11 8l-4 4 4 4"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg>
-                    </span>
-                    ออกจากระบบ
-                </a>
-            </div>
+    <a href="admin_dashboard.php" class="menu-item home" role="menuitem">
+        <span class="menu-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg>
+        </span>
+        หน้าหลัก
+    </a>
+
+    <a href="manage_technicians.php" class="menu-item" role="menuitem">
+        <span class="menu-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </span>
+        จัดการช่าง
+    </a>
+    <a href="admin_create_technician.php" class="menu-item" role="menuitem">
+        <span class="menu-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="23" y1="11" x2="17" y2="11"></line><line x1="20" y1="8" x2="20" y2="14"></line></svg>
+        </span>
+        เพิ่มช่างใหม่
+    </a>
+
+    <a href="logout.php" class="menu-item logout" role="menuitem">
+        <span class="menu-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M15 12H3"></path><path d="M11 8l-4 4 4 4"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg>
+        </span>
+        ออกจากระบบ
+    </a>
+</div>
         </div>
     </nav>
 </header>
