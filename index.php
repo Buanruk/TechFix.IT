@@ -135,7 +135,7 @@
 
     <a href="admin_login.php" class="btn btn-admin" aria-label="เข้าสู่ระบบแอดมิน">
         <i class="fas fa-user-shield" aria-hidden="true"></i>
-        👤ADMIN
+        ADMIN
     </a>
 </nav>
   </header>
