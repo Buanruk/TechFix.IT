@@ -5,11 +5,10 @@ if (!isset($_SESSION['admin_id'])) {
     exit();
 }
 
-$conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
+$conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix"); // ตรวจสอบรหัสผ่าน DB อีกครั้ง
 if ($conn->connect_error) { die("DB Error"); }
 $conn->set_charset("utf8");
 
-// SQL อัปเดต: เพิ่ม t.phone_number เข้ามา
 $sql = "
     SELECT
         t.id,
@@ -43,12 +42,18 @@ $total_technicians = count($technician_stats);
 
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 function format_thai_datetime($datetime) {
-    if (empty($datetime)) {
+    if (empty($datetime) || $datetime === '0000-00-00 00:00:00') {
         return '<span style="color:#999;">ยังไม่เคยเข้าระบบ</span>';
     }
     $ts = strtotime($datetime);
     return date('d/m/Y H:i', $ts);
 }
+
+// ข้อความแจ้งเตือน (จาก session)
+$successMsg = $_SESSION['success'] ?? '';
+unset($_SESSION['success']);
+$errorMsg = $_SESSION['error'] ?? '';
+unset($_SESSION['error']);
 ?>
 <!doctype html>
 <html lang="th">
@@ -57,7 +62,7 @@ function format_thai_datetime($datetime) {
 <title>จัดการช่างเทคนิค - TechFix Admin</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-    /* CSS ทั้งหมดเหมือนเดิม */
+    /* CSS ส่วนใหญ่เหมือนเดิม */
     :root{--navy:#0b2440; --blue:#1e88e5; --bg:#f5f9ff; --card:#ffffff; --line:#e6effa; --text:#1f2937;--green:#2e7d32; --red:#c62828; --blue-strong:#0b63c8;--shadow:0 16px 40px rgba(10,37,64,.12);--radius:20px;--container:1680px;}
     *{box-sizing:border-box} html,body{margin:0}
     body{font-family:system-ui,Segoe UI,Roboto,"TH Sarabun New",Tahoma,sans-serif;color:var(--text);background: radial-gradient(1200px 600px at 50% -240px,#eaf3ff 0,transparent 60%),linear-gradient(180deg,#fbfdff 0,var(--bg) 100%);}
@@ -101,8 +106,41 @@ function format_thai_datetime($datetime) {
     tbody tr:hover td{background:#f3f8ff}
     .tc{text-align:center}
     .empty{padding:28px;text-align:center;color:#667085}
-    .btn-details{font-family:inherit;font-size:13px;font-weight:700;padding:6px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;transition:all .18s ease;margin:0;background:var(--blue);color:#fff;border-color:var(--blue);}
-    .btn-details:hover{background:#0b63c8;border-color:#0b63c8;}
+
+    /* เพิ่ม CSS สำหรับปุ่มลบ และจัด Action Cell */
+    .action-cell { display: flex; flex-direction:column; gap: 8px; justify-content:center; align-items: center;} /* จัดกลางทั้งแนวตั้งและแนวนอน */
+    .btn-details, .btn-delete {
+        font-family:inherit; font-size:13px; font-weight:700; padding:6px 12px;
+        border:1px solid var(--line); border-radius:10px; cursor:pointer;
+        transition:all .18s ease; margin: 0; min-width: 80px; /* เพิ่ม min-width เพื่อให้ปุ่มขนาดเท่ากัน */
+    }
+    .btn-details{ background:var(--blue); color:#fff; border-color:var(--blue); }
+    .btn-details:hover{ background:#0b63c8; border-color:#0b63c8; }
+    .btn-delete{ background:#fff; color:var(--red); border-color:var(--red); }
+    .btn-delete:hover{ background:var(--red); color:#fff; }
+    .alert-box {
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        border-radius: 14px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: fadeInDown .4s ease;
+    }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .alert-box.success {
+        background-color: #e9f9ec;
+        border: 1px solid #d1f3d8;
+        color: #2e7d32;
+    }
+    .alert-box.error {
+        background-color: #ffecec;
+        border: 1px solid #ffd6d6;
+        color: #c62828;
+    }
+    .alert-box svg { flex: 0 0 20px; }
+    /* Modal CSS เหมือนเดิม */
     .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,40,80,.6);backdrop-filter:blur(5px);z-index:9998;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s ease}
     .modal-overlay.show{opacity:1;pointer-events:auto}
     .modal-content{background:#fff;border-radius:var(--radius);box-shadow:0 20px 50px rgba(0,0,0,.2);max-width:90vw;width:600px;max-height:85vh;display:flex;flex-direction:column;transform:scale(.95);transition:transform .25s ease}
@@ -113,6 +151,29 @@ function format_thai_datetime($datetime) {
     .modal-body{padding:24px;overflow-y:auto;display:grid;grid-template-columns:150px 1fr;gap:14px}
     .modal-body .label{font-weight:800;color:var(--navy)}
     .modal-body .value{word-break:break-word;white-space:pre-wrap}
+
+    /* Responsive */
+    @media (max-width:960px){
+        thead{display:none} 
+        tbody tr{
+            display:block;
+            border:1px solid var(--line); border-radius:14px;
+            margin:12px; padding: 8px;
+            box-shadow:0 8px 18px rgba(15,40,80,.06);
+            overflow:hidden;
+        }
+        tbody td{
+            display:flex; gap:10px; justify-content:space-between; align-items:center;
+            border-top:1px solid var(--line); padding:10px;
+        }
+        tbody tr td:first-child{border-top:none}
+        tbody td::before{
+            content:attr(data-label);
+            font-weight:800; color:#0f3a66;
+        }
+        .action-cell{flex-direction:row; justify-content:center; flex-wrap: wrap;}
+    }
+
 </style>
 </head>
 <body>
@@ -154,6 +215,19 @@ function format_thai_datetime($datetime) {
 
 <div class="shell">
     <div class="container">
+        <?php if (!empty($successMsg)): ?>
+            <div class="alert-box success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <span><?= htmlspecialchars($successMsg) ?></span>
+            </div>
+        <?php endif; ?>
+        <?php if (!empty($errorMsg)): ?>
+            <div class="alert-box error">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span><?= htmlspecialchars($errorMsg) ?></span>
+            </div>
+        <?php endif; ?>
+
         <section class="panel">
             <header class="panel-head"><h1 class="title">ภาพรวมและจัดการช่างเทคนิค</h1></header>
             
@@ -171,7 +245,7 @@ function format_thai_datetime($datetime) {
                             <th>ชื่อ-สกุล ช่างเทคนิค</th>
                             <th class="tc">งานทั้งหมด</th>
                             <th class="tc">เข้าสู่ระบบล่าสุด</th>
-                            <th class="tc">รายละเอียด</th>
+                            <th class="tc">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -190,11 +264,19 @@ function format_thai_datetime($datetime) {
                                 data-in_progress_jobs="<?= (int)$tech['in_progress_jobs'] ?>"
                                 data-done_jobs="<?= (int)$tech['done_jobs'] ?>"
                             >
-                                <td><strong><?= h($tech['fullname']) ?></strong></td>
-                                <td class="tc"><?= (int)$tech['total_jobs'] ?> งาน</td>
-                                <td class="tc"><?= format_thai_datetime($tech['last_login']) ?></td>
-                                <td class="tc">
-                                    <button class="btn-details">ดูข้อมูล</button>
+                                <td data-label="ชื่อ-สกุล ช่างเทคนิค"><strong><?= h($tech['fullname']) ?></strong></td>
+                                <td class="tc" data-label="งานทั้งหมด"><?= (int)$tech['total_jobs'] ?> งาน</td>
+                                <td class="tc" data-label="เข้าสู่ระบบล่าสุด"><?= format_thai_datetime($tech['last_login']) ?></td>
+                                <td class="tc" data-label="จัดการ">
+                                    <div class="action-cell">
+                                        <button class="btn-details">ดูข้อมูล</button>
+                                        <form method="POST" action="delete_technician.php" 
+                                              onsubmit="return confirm('คุณต้องการลบช่าง: <?= h($tech['fullname']) ?> (ID: <?= (int)$tech['id'] ?>) ใช่หรือไม่?\\n\\nข้อควรระวัง: หากมีงานที่ยังไม่เสร็จ ช่างคนนี้จะไม่สามารถถูกลบได้');">
+                                            <input type="hidden" name="id" value="<?= (int)$tech['id'] ?>">
+                                            <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+                                            <button type="submit" class="btn-delete">ลบ</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -246,7 +328,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const openModal = (data) => {
         modalTitle.textContent = `ข้อมูลช่าง: ${data.fullname}`;
-        // อัปเดต Modal ให้แสดงเบอร์โทรด้วย
         modalBody.innerHTML = `
             <span class="label">ID:</span><span class="value">${data.id}</span>
             <span class="label">ชื่อ-สกุล:</span><span class="value">${data.fullname}</span>

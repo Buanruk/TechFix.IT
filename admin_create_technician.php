@@ -48,7 +48,7 @@ unset($_SESSION['error']); // ลบออกหลังแสดง
 
                 <div class="field">
                     <div class="input">
-                        <input name="phone_number" type="tel" placeholder="เบอร์โทรศัพท์ (ถ้ามี)">
+                        <input name="phone_number" type="tel" placeholder="เบอร์โทรศัพท์">
                     </div>
                 </div>
 
