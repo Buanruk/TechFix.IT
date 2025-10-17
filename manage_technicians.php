@@ -90,7 +90,7 @@ $errorMsg = $_SESSION['error'] ?? ''; unset($_SESSION['error']);
     .empty{padding:28px;text-align:center;color:#667085}
     .action-cell { display: flex; flex-direction:column; gap: 8px; justify-content:center; align-items: center;}
 
-    /* ===== ⬇️ แก้ไข 1 จุด: เพิ่ม .btn-edit และ text-decoration ⬇️ ===== */
+    /* =====⬇️ แก้ไข 1 จุด: เพิ่ม .btn-edit และ text-decoration ⬇️ ===== */
     .btn-details, .btn-delete, .btn-edit {font-family:inherit; font-size:13px; font-weight:700; padding:6px 12px;border:1px solid var(--line); border-radius:10px; cursor:pointer;transition:all .18s ease; margin: 0; min-width: 80px; text-decoration: none; text-align: center;}
     
     .btn-details{ background:var(--blue); color:#fff; border-color:var(--blue); }
