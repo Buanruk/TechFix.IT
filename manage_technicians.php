@@ -1,4 +1,12 @@
 <?php
+ini_set('display_errors', '1'); // 1. สั่งให้มันโชว์ error ออกมาที่จอเลย
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
+
+// (โค้ดเดิมของคุณ session_start(); ฯลฯ ก็ตามลงมา)
+session_start();
+if (!isset($_SESSION['admin_id'])) {
+// ...
 // ส่วน PHP ด้านบนทั้งหมดเหมือนเดิม ไม่ต้องแก้ไข
 session_start();
 if (!isset($_SESSION['admin_id'])) {
