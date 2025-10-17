@@ -159,6 +159,12 @@ unset($_SESSION['error']); // ลบออกหลังแสดง
 
         <button class="btn" type="submit">เข้าสู่ระบบ</button>
       </form>
+    </div> <div class="foot">
+      กลับหน้าแรก? <a href="index.php">TechFix.it</a>
+    </div>
+    </div> <script>
+    function togglePassword()
+      </form>
   </div>
 
   <script>
