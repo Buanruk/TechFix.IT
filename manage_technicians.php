@@ -1,12 +1,4 @@
 <?php
-ini_set('display_errors', '1'); // 1. สั่งให้มันโชว์ error ออกมาที่จอเลย
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
-
-// (โค้ดเดิมของคุณ session_start(); ฯลฯ ก็ตามลงมา)
-session_start();
-if (!isset($_SESSION['admin_id'])) {
-// ...
 // ส่วน PHP ด้านบนทั้งหมดเหมือนเดิม ไม่ต้องแก้ไข
 session_start();
 if (!isset($_SESSION['admin_id'])) {
@@ -78,7 +70,7 @@ $errorMsg = $_SESSION['error'] ?? ''; unset($_SESSION['error']);
     .menu-item.logout:hover{background:#ffecec; color:#b71c1c}
     .menu-icon{ width:18px; height:18px; display:inline-block; flex:0 0 18px;}
     .menu-icon svg{width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round}
-    .shell{padding:20px}
+G .shell{padding:20px}
     .container{max-width:min(96vw,var(--container)); margin:24px auto 40px; padding:0 24px;}
     .panel{border-radius:var(--radius);border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
     .panel-head{padding:18px 22px;background:linear-gradient(180deg,rgba(78,169,255,.16),rgba(30,136,229,.10))}
@@ -97,7 +89,7 @@ $errorMsg = $_SESSION['error'] ?? ''; unset($_SESSION['error']);
     .tc{text-align:center}
     .empty{padding:28px;text-align:center;color:#667085}
     .action-cell { display: flex; flex-direction:column; gap: 8px; justify-content:center; align-items: center;}
-    
+
     /* ===== ⬇️ แก้ไข 1 จุด: เพิ่ม .btn-edit และ text-decoration ⬇️ ===== */
     .btn-details, .btn-delete, .btn-edit {font-family:inherit; font-size:13px; font-weight:700; padding:6px 12px;border:1px solid var(--line); border-radius:10px; cursor:pointer;transition:all .18s ease; margin: 0; min-width: 80px; text-decoration: none; text-align: center;}
     
@@ -105,16 +97,16 @@ $errorMsg = $_SESSION['error'] ?? ''; unset($_SESSION['error']);
     .btn-details:hover{ background:#0b63c8; border-color:#0b63c8; }
     .btn-delete{ background:#fff; color:var(--red); border-color:var(--red); }
     .btn-delete:hover{ background:var(--red); color:#fff; }
-    
+
     /* ===== ⬇️ เพิ่ม 2 บรรทัดนี้: สไตล์ปุ่มแก้ไข ⬇️ ===== */
     .btn-edit{ background:#e8f2ff; color:var(--blue-strong); border-color:#b9dcff; }
     .btn-edit:hover{ background:var(--blue-strong); color:#fff; border-color:var(--blue-strong); }
-    
+
     .alert-box {padding: 14px 18px;margin-bottom: 20px;border-radius: 14px;font-weight: 700;display: flex;align-items: center;gap: 12px;animation: fadeInDown .4s ease;}
     @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     .alert-box.success {background-color: #e9f9ec;border: 1px solid #d1f3d8;color: #2e7d32;}
     .alert-box.error {background-color: #ffecec;border: 1px solid #ffd6d6;color: #c62828;}
-  S .alert-box svg { flex: 0 0 20px; }
+    .alert-box svg { flex: 0 0 20px; }
     .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,40,80,.6);backdrop-filter:blur(5px);z-index:9998;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s ease}
     .modal-overlay.show{opacity:1;pointer-events:auto}
     .modal-content{background:#fff;border-radius:var(--radius);box-shadow:0 20px 50px rgba(0,0,0,.2);max-width:90vw;width:600px;max-height:85vh;display:flex;flex-direction:column;transform:scale(.95);transition:transform .25s ease}
@@ -175,7 +167,7 @@ $errorMsg = $_SESSION['error'] ?? ''; unset($_SESSION['error']);
                             <th>ชื่อ-สกุล ช่างเทคนิค</th>
                             <th class="tc">งานทั้งหมด</th>
                             <th class="tc">เข้าสู่ระบบล่าสุด</th>
-                            <th class="tc">จัดการ</th>
+G                         <th class="tc">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -209,8 +201,7 @@ $errorMsg = $_SESSION['error'] ?? ''; unset($_SESSION['error']);
                     <?php endif; ?>
                     </tbody>
                 </table>
-        E   </div>
-        </section>
+            </div>         </section>
         <div class="footer" style="text-align:center;color:#667085;margin-top:18px">© <?= date('Y') ?> TechFix — ระบบแจ้งซ่อมคอมพิวเตอร์</div>
     </div>
 </div>
@@ -232,7 +223,7 @@ function toggleNavMenu(btn){
     const show = !menu.classList.contains('show');
     menu.classList.toggle('show', show);
     btn.classList.toggle('active', show);
-    btn.setAttribute('aria-expanded', show ? 'true' : 'false');
+  D btn.setAttribute('aria-expanded', show ? 'true' : 'false');
     menu.setAttribute('aria-hidden', show ? 'false' : 'true');
 }
 document.addEventListener('click', (e)=>{
@@ -275,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const row = e.target.closest('tr');
                 if (row) {
                     openModal(row.dataset);
-                }
+G               }
             }
         });
     }
@@ -295,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script>
     const PING_URL = 'changes_ping.php?role=technicians_list';
-    const POLL_MS  = 5000; // ตรวจสอบทุก 5 วินาที
+    const POLL_MS = 5000; // ตรวจสอบทุก 5 วินาที
     let lastSig = null;
 
     async function pingChanges() {
