@@ -44,7 +44,6 @@ $errorMsg = $_SESSION['error'] ?? ''; unset($_SESSION['error']);
 <title>จัดการช่างเทคนิค - TechFix Admin</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-    /* CSS ทั้งหมดเหมือนเดิม */
     :root{--navy:#0b2440; --blue:#1e88e5; --bg:#f5f9ff; --card:#ffffff; --line:#e6effa; --text:#1f2937;--green:#2e7d32; --red:#c62828; --blue-strong:#0b63c8;--shadow:0 16px 40px rgba(10,37,64,.12);--radius:20px;--container:1680px;}
     *{box-sizing:border-box} html,body{margin:0}
     body{font-family:system-ui,Segoe UI,Roboto,"TH Sarabun New",Tahoma,sans-serif;color:var(--text);background: radial-gradient(1200px 600px at 50% -240px,#eaf3ff 0,transparent 60%),linear-gradient(180deg,#fbfdff 0,var(--bg) 100%);}
@@ -70,7 +69,7 @@ $errorMsg = $_SESSION['error'] ?? ''; unset($_SESSION['error']);
     .menu-item.logout:hover{background:#ffecec; color:#b71c1c}
     .menu-icon{ width:18px; height:18px; display:inline-block; flex:0 0 18px;}
     .menu-icon svg{width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round}
-    .shell{padding:20px}
+S .shell{padding:20px}
     .container{max-width:min(96vw,var(--container)); margin:24px auto 40px; padding:0 24px;}
     .panel{border-radius:var(--radius);border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
     .panel-head{padding:18px 22px;background:linear-gradient(180deg,rgba(78,169,255,.16),rgba(30,136,229,.10))}
@@ -89,7 +88,7 @@ $errorMsg = $_SESSION['error'] ?? ''; unset($_SESSION['error']);
     .tc{text-align:center}
     .empty{padding:28px;text-align:center;color:#667085}
     .action-cell { display: flex; flex-direction:column; gap: 8px; justify-content:center; align-items: center;}
-
+    
     /* ===== ⬇️ แก้ไข 1 จุด: เพิ่ม .btn-edit และ text-decoration ⬇️ ===== */
     .btn-details, .btn-delete, .btn-edit {font-family:inherit; font-size:13px; font-weight:700; padding:6px 12px;border:1px solid var(--line); border-radius:10px; cursor:pointer;transition:all .18s ease; margin: 0; min-width: 80px; text-decoration: none; text-align: center;}
     
@@ -166,7 +165,7 @@ $errorMsg = $_SESSION['error'] ?? ''; unset($_SESSION['error']);
                         <tr>
                             <th>ชื่อ-สกุล ช่างเทคนิค</th>
                             <th class="tc">งานทั้งหมด</th>
-                            <th class="tc">เข้าสู่ระบบล่าสุด</th>
+                          D <th class="tc">เข้าสู่ระบบล่าสุด</th>
                             <th class="tc">จัดการ</th>
                         </tr>
                     </thead>
@@ -194,7 +193,7 @@ $errorMsg = $_SESSION['error'] ?? ''; unset($_SESSION['error']);
                                             <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
                                             <button type="submit" class="btn-delete">ลบ</button>
                                         </form>
-                                    </div>
+D </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -316,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('load', pingChanges);
 
     // ตรวจสอบอีกครั้งเมื่อผู้ใช้กลับมาที่แท็บนี้
-    document.addEventListener('visibilitychange', () => {
+d document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             pingChanges();
         }
