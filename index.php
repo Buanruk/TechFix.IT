@@ -168,6 +168,29 @@ function t($key) {
         <i class="fas fa-user-shield" aria-hidden="true"></i>
         ADMIN
     </a>
+    <header class="navbar" role="navigation" aria-label="เมนูหลัก">
+        <div class="logo"><span class="dot"></span> <?= t('nav_brand') ?></div>
+
+        <nav class="nav-actions">
+            <a href="technician_login.php" class="btn btn-admin outline" aria-label="เข้าสู่ระบบช่างเทคนิค">
+                <i class="fas fa-wrench" aria-hidden="true"></i>
+                <?= t('nav_technician') ?>
+            </a>
+
+            <a href="admin_login.php" class="btn btn-admin" aria-label="เข้าสู่ระบบแอดมิน">
+                <i class="fas fa-user-shield" aria-hidden="true"></i>
+                <?= t('nav_admin') ?>
+            </a>
+
+            <div class="lang-switcher">
+                <?php if ($current_lang === 'th'): ?>
+                    <a href="?lang=en" class="lang-link" lang="en" hreflang="en"><?= t('lang_en') ?></a>
+                <?php else: ?>
+                    <a href="?lang=th" class="lang-link" lang="th" hreflang="th"><?= t('lang_th') ?></a>
+                <?php endif; ?>
+            </div>
+             </nav>
+    </header>
 </nav>
   </header>
 
