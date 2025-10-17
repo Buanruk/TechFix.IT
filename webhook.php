@@ -93,53 +93,17 @@ if (!$device) {
 /* ตรวจความครบ */
 $missing = [];
 if (!$nickname) $missing[] = "ชื่อเล่น";
-// if (!$serial)   $missing[] = "หมายเลขเครื่อง"; // <-- ย้ายไปเช็ค
-// if (!$floor)    $missing[] = "เลขห้อง"; // <-- ย้ายไปเช็ค
+if (!$serial)   $missing[] = "หมายเลขเครื่อง";
 if (!$phone)    $missing[] = "เบอร์โทร";
 if (!$device)   $missing[] = "อุปกรณ์";
-if ($issue==='') $missing[] = "ปัญหา";
-
-
-/* ===== ตรวจสอบความถูกต้อง (Validation) ===== */
-
-// 1. ตรวจสอบ Serial Number
-if (!$serial) {
-    $missing[] = "หมายเลขเครื่อง";
-} else {
-    // RegEx นี้: ห้ามมีภาษาไทย, ห้ามมีเว้นวรรค, อนุญาตแค่ A-Z, 0-9, ขีดกลาง
-    // ยาว 4-25 ตัว
-    if (!preg_match('/^[a-zA-Z0-9-]{4,25}$/', $serial)) {
-         $missing[] = "หมายเลขเครื่อง (รูปแบบไม่ถูกต้อง)";
-         log_to('df_invalid_serial.log', "Invalid S/N: $serial");
-    }
-}
-
-// 2. ตรวจสอบ ห้อง/ชั้น (Floor) <<<<---- เพิ่มส่วนนี้
-if (!$floor) {
-    $missing[] = "เลขห้อง";
-} else {
-    // RegEx นี้: ห้ามมีภาษาไทย (นี่คือตัวดักปัญหา)
-    // อนุญาต A-Z, 0-9, ขีดกลาง, ทับ, และเว้นวรรค (เช่น B10, 302, AAA, 'Floor 5')
-    // ยาว 1-20 ตัว
-    if (!preg_match('/^[a-zA-Z0-9-/\s]{1,20}$/', $floor)) {
-         $missing[] = "เลขห้อง (รูปแบบไม่ถูกต้อง)";
-         log_to('df_invalid_floor.log', "Invalid Floor: $floor");
-    }
-}
-
-// 3. ตรวจสอบเบอร์โทร (กันไว้เหนียว)
-// ... (คุณอาจเพิ่มการตรวจสอบเบอร์โทรด้วย RegEx ที่นี่ได้ด้วย) ...
-
+if ($issue==='')$missing[] = "ปัญหา";
+if (!$floor)    $missing[] = "เลขห้อง";
 
 if ($missing) {
   send_json_and_exit([
-    // เปลี่ยนข้อความตอบกลับให้ชัดเจนขึ้น
-    "fulfillmentText" => "ข้อมูลไม่ครบหรือไม่ถูกต้อง: " . implode(", ", $missing) . " กรุณากรอกใหม่อีกครั้งครับ"
+    "fulfillmentText" => "ข้อมูลไม่ครบ: " . implode(", ", $missing) . " กรุณากรอกให้ครบครับ"
   ]);
 }
-
-/* ===== ฐานข้อมูล ===== */
-// ... (โค้ดส่วนที่เหลือเหมือนเดิม) ...
 
 /* ===== ฐานข้อมูล ===== */
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
