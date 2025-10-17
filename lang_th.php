@@ -1,0 +1,41 @@
+<?php
+$lang = [
+    'page_title' => 'TechFix.it',
+    'nav_brand' => 'TechFix.it',
+    'nav_technician' => 'TECHNICIAN', // Assuming these buttons remain in English
+    'nav_admin' => 'ADMIN', // Assuming these buttons remain in English
+    'hero_title_1' => 'บริการซ่อมคอมพิวเตอร์ ',
+    'hero_title_2' => 'TechFix.it',
+    'hero_subtitle' => 'แจ้งซ่อมผ่าน LINE Bot • ติดตามสถานะแบบเรียลไทม์ • รองรับมือถือเต็มรูปแบบ',
+    'hero_button_queue' => 'คิวแจ้งซ่อม',
+    'hero_button_details' => 'ดูรายละเอียด',
+    'qr_line_id' => '@429fxsnw',
+    'story1_title_1' => 'แจ้งซ่อมง่ายๆ',
+    'story1_title_2' => ' ไม่กี่ขั้นตอน',
+    'story1_desc' => 'สแกน QR ผ่าน LINE กรอกข้อมูลแจ้งซ่อมเพียงไม่กี่ขั้นตอน <br> ระบบจะรับข้อมูลการแจ้งซ่อมและส่งคิวให้ทันที',
+    'story1_li1' => 'รองรับอุปกรณ์ IT ทุกชนิด',
+    'story1_li2' => 'แจ้งเตือนอัตโนมัติในไลน์',
+    'story1_li3' => 'ติดตามสถานะได้ตลอดเวลา',
+    'story2_title_1' => 'อัปเดต ',
+    'story2_title_2' => 'เรียลไทม์',
+    'story2_desc' => 'สถานะ “แจ้งซ่อม → กำลังซ่อม → เสร็จสิ้น” ถูกซิงก์ทั้งหน้าเว็บและ LINE พร้อม timestamp',
+    'story2_li1' => 'การ์ดสรุปงาน + ค้นหาตามสถานะ',
+    'story2_li2' => 'แจ้งเตือนเมื่อมีการเปลี่ยนแปลง',
+    'story2_li3' => 'ส่งการแจ้งเตือนเข้า LINE หลังซ่อมเสร็จ',
+    'story3_title_1' => 'พร้อมใช้งานทุก ',
+    'story3_title_2' => 'อุปกรณ์',
+    'story3_desc' => 'Smartphone , PC , Laptop , Tablet',
+    'story3_li1' => '1 LINE ID แจ้งได้หลายอุปกรณ์ (โครงสร้าง <code>one-to-many</code> + <code>user token</code>)',
+    'story3_li2' => 'ช่วยตรวจคำผิดด้วย AI',
+    'story3_li3' => 'คำนึงถึงความปลอดภัยของข้อมูลส่วนบุคคล',
+    'story3_li4' => 'การเก็บข้อมูลเพื่อพัฒนาความเสถียร',
+    'grid_title' => 'ตัวอย่างหมวดอุปกรณ์ที่รับซ่อม',
+    'card1_title' => 'ปัญหาด้านคอมพิวเตอร์',
+    'card2_title' => 'ปัญหาด้านโน๊ตบุ๊ค',
+    'card3_title' => 'ปัญหาด้านปริ้นเตอร์',
+    'card4_title' => 'อุปกรณ์เครือข่าย',
+    'footer_text' => '© %s TechFix.it — บริการซ่อมอุปกรณ์ไอทีครบวงจร',
+    'lang_en' => 'EN', // English text for the button
+    'lang_th' => 'ไทย' // Short code for the button
+];
+?>

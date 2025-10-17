@@ -1,4 +1,35 @@
-<?php /* TechFix.it — Parallax Scroll + Apple-style motion (single file) */ ?>
+<?php
+session_start(); // Start session to remember the language choice
+
+// 1. Determine the selected language from URL or Session
+$available_langs = ['en', 'th'];
+$default_lang = 'th'; // Default language
+
+if (isset($_GET['lang']) && in_array($_GET['lang'], $available_langs)) {
+    // If lang is provided in URL and is supported
+    $current_lang = $_GET['lang'];
+    $_SESSION['lang'] = $current_lang; // Store in session
+} elseif (isset($_SESSION['lang']) && in_array($_SESSION['lang'], $available_langs)) {
+    // If not in URL, check session
+    $current_lang = $_SESSION['lang'];
+} else {
+    // Otherwise, use default language
+    $current_lang = $default_lang;
+    $_SESSION['lang'] = $current_lang;
+}
+
+// 2. Include the correct language file
+// Ensure lang files are in the same directory or adjust path
+include 'lang_' . $current_lang . '.php';
+
+// Function to safely output translated text
+function t($key) {
+    global $lang;
+    return htmlspecialchars($lang[$key] ?? $key, ENT_QUOTES, 'UTF-8');
+}
+?>
+
+<!DOCTYPE html>
 <!DOCTYPE html>
 <html lang="th">
 <head>
