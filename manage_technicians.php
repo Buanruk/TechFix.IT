@@ -89,7 +89,7 @@ $errorMsg = $_SESSION['error'] ?? ''; unset($_SESSION['error']);
     .tc{text-align:center}
     .empty{padding:28px;text-align:center;color:#667085}
     .action-cell { display: flex; flex-direction:column; gap: 8px; justify-content:center; align-items: center;}
-    
+
     /* ===== ⬇️ แก้ไข 1 จุด: เพิ่ม .btn-edit และ text-decoration ⬇️ ===== */
     .btn-details, .btn-delete, .btn-edit {font-family:inherit; font-size:13px; font-weight:700; padding:6px 12px;border:1px solid var(--line); border-radius:10px; cursor:pointer;transition:all .18s ease; margin: 0; min-width: 80px; text-decoration: none; text-align: center;}
     
@@ -114,7 +114,7 @@ $errorMsg = $_SESSION['error'] ?? ''; unset($_SESSION['error']);
     .modal-header{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--line)}
     .modal-title{margin:0;color:var(--navy);font-size:18px}
     .modal-close{background:transparent;border:none;font-size:24px;line-height:1;cursor:pointer;color:#999}
-S .modal-body{padding:24px;overflow-y:auto;display:grid;grid-template-columns:150px 1fr;gap:14px}
+    .modal-body{padding:24px;overflow-y:auto;display:grid;grid-template-columns:150px 1fr;gap:14px}
     .modal-body .label{font-weight:800;color:var(--navy)}
     .modal-body .value{word-break:break-word;white-space:pre-wrap}
     @media (max-width:960px){
@@ -182,23 +182,23 @@ S .modal-body{padding:24px;overflow-y:auto;display:grid;grid-template-columns:15
                                 data-in_progress_jobs="<?= (int)$tech['in_progress_jobs'] ?>" data-done_jobs="<?= (int)$tech['done_jobs'] ?>">
                                 <td data-label="ชื่อ-สกุล ช่างเทคนิค"><strong><?= h($tech['fullname']) ?></strong></td>
                                 <td class="tc" data-label="งานทั้งหมด"><?= (int)$tech['total_jobs'] ?> งาน</td>
-D                           <td class="tc" data-label="เข้าสู่ระบบล่าสุด"><?= format_thai_datetime($tech['last_login']) ?></td>
+                                <td class="tc" data-label="เข้าสู่ระบบล่าสุด"><?= format_thai_datetime($tech['last_login']) ?></td>
                                 <td class="tc" data-label="จัดการ">
                                     <div class="action-cell">
                                         <button class="btn-details">ดูข้อมูล</button>
                                         
-                                                                              D <a href="admin_edit_technician.php?id=<?= (int)$tech['id'] ?>" class="btn-edit">แก้ไข</a>
+                                                                                <a href="admin_edit_technician.php?id=<?= (int)$tech['id'] ?>" class="btn-edit">แก้ไข</a>
                                         
                                         <form method="POST" action="delete_technician.php" onsubmit="return confirm('ยืนยันที่จะลบช่าง \'<?= h($tech['fullname']) ?>\' ใช่หรือไม่?');">
                                             <input type="hidden" name="id" value="<?= (int)$tech['id'] ?>">
-G                                     <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+                                            <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
                                             <button type="submit" class="btn-delete">ลบ</button>
                                         </form>
                                     </div>
                                 </td>
-          _               </tr>
+                            </tr>
                         <?php endforeach; ?>
-G               <?php endif; ?>
+                    <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -210,7 +210,7 @@ G               <?php endif; ?>
 <div id="detailsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-content">
         <header class="modal-header"><h2 id="modalTitle" class="modal-title">ข้อมูลช่างเทคนิค</h2><button class="modal-close" aria-label="ปิด">&times;</button></header>
-G     <main id="modalBody" class="modal-body"></main>
+        <main id="modalBody" class="modal-body"></main>
     </div>
 </div>
 
@@ -225,7 +225,7 @@ function toggleNavMenu(btn){
     menu.classList.toggle('show', show);
     btn.classList.toggle('active', show);
     btn.setAttribute('aria-expanded', show ? 'true' : 'false');
-G menu.setAttribute('aria-hidden', show ? 'false' : 'true');
+    menu.setAttribute('aria-hidden', show ? 'false' : 'true');
 }
 document.addEventListener('click', (e)=>{
     const menu = document.getElementById('navMenu');
@@ -238,7 +238,7 @@ document.addEventListener('click', (e)=>{
 
 document.addEventListener('DOMContentLoaded', () => {
     const modalOverlay = document.getElementById('detailsModal');
-  C const modalBody = document.getElementById('modalBody');
+    const modalBody = document.getElementById('modalBody');
     const modalTitle = document.getElementById('modalTitle');
     const table = document.querySelector('.table-wrap');
 
@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     document.addEventListener('keydown', e => {
-  D   if (e.key === 'Escape' && modalOverlay.classList.contains('show')) {
+        if (e.key === 'Escape' && modalOverlay.classList.contains('show')) {
             closeModal();
         }
     });
@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const n = document.getElementById('liveNotice');
                 if (n) n.style.display = 'inline-flex';
                 setTimeout(() => location.reload(), 800);
-  D     }
+            }
         } catch (e) {
             console.error('Ping failed:', e);
         }
@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('load', pingChanges);
 
     // ตรวจสอบอีกครั้งเมื่อผู้ใช้กลับมาที่แท็บนี้
-Services document.addEventListener('visibilitychange', () => {
+    document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             pingChanges();
         }
