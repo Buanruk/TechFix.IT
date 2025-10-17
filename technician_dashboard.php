@@ -249,7 +249,7 @@ $result = $stmt->get_result();
                 <span></span><span></span><span></span>
             </button>
             <div id="navMenu" class="nav-menu" role="menu" aria-hidden="true">
-                <a href="logout.php" class="menu-item logout" role="menuitem">
+                <a href="logout_.php" class="menu-item logout" role="menuitem">
                     <span class="menu-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24"><path d="M15 12H3"></path><path d="M11 8l-4 4 4 4"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg>
                     </span>
