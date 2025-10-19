@@ -49,14 +49,14 @@ function findTechSlug($assignedName, $TECHS){
     return '';
 }
 
-// ===== [แก้ไข 1] รับค่าตัวแปร GET (เพิ่ม $searchQuery) =====
+// ===== [รับค่าตัวแปร GET (เพิ่ม $searchQuery)] =====
 $filterStatus = $_GET['status'] ?? 'all';
 if (!in_array($filterStatus, ['all','new','in_progress','done'], true)) $filterStatus = 'all';
 
 $filterDtype = $_GET['dtype'] ?? 'all';
 if (!in_array($filterDtype, array_keys($dtypes), true)) $filterDtype = 'all';
 
-$searchQuery = trim($_GET['q'] ?? ''); // <--- [เพิ่มใหม่] รับค่าค้นหา
+$searchQuery = trim($_GET['q'] ?? ''); // <--- [รับค่าค้นหา]
 
 $perPage = 10;
 $page    = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
@@ -80,13 +80,13 @@ function statusIcon($s){
     };
 }
 
-// ===== [แก้ไข 2] อัปเดต pageUrl (เพิ่ม $searchQuery) =====
+// ===== [อัปเดต pageUrl (เพิ่ม $searchQuery)] =====
 function pageUrl($p, $status, $dtype, $searchQuery){
     $p = max(1,(int)$p);
     return '?status='.urlencode($status).'&dtype='.urlencode($dtype).'&q='.urlencode($searchQuery).'&page='.$p;
 }
 
-// ===== [แก้ไข 3] อัปเดต build_where_and_params (เพิ่ม $searchQuery) =====
+// ===== [อัปเดต build_where_and_params (เพิ่ม $searchQuery)] =====
 function build_where_and_params($status, $dtype, $regexMap, $searchQuery){
     $wheres = []; $types = ''; $vals = [];
     if ($status !== 'all'){ $wheres[] = "status = ?"; $types .= "s"; $vals[] = $status; }
@@ -96,10 +96,9 @@ function build_where_and_params($status, $dtype, $regexMap, $searchQuery){
         $vals[]   = strtolower($regexMap[$dtype]);
     }
     
-    // --- [เพิ่มใหม่] ตรรกะการค้นหา ---
+    // --- [ตรรกะการค้นหา] ---
     if ($searchQuery !== '') {
         $searchTerm = '%' . $searchQuery . '%';
-        // ค้นหาในฟิลด์เหล่านี้
         $wheres[] = "(
             username LIKE ? OR 
             queue_number LIKE ? OR 
@@ -110,11 +109,10 @@ function build_where_and_params($status, $dtype, $regexMap, $searchQuery){
             floor LIKE ? OR
             assigned_technician LIKE ?
         )";
-        // เพิ่ม 8 types (s) และ 8 values (ตัวแปร)
         $types .= "ssssssss"; 
         array_push($vals, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm);
     }
-    // --- [จบส่วนเพิ่มใหม่] ---
+    // --- [จบส่วนค้นหา] ---
 
     $whereSQL = $wheres ? ("WHERE ".implode(" AND ", $wheres)) : "";
     return [$whereSQL, $types, $vals];
@@ -130,7 +128,7 @@ if ($qr) {
     }
 }
 
-// ===== [แก้ไข 4] อัปเดตการเรียกใช้ build_where_and_params =====
+// ===== [อัปเดตการเรียกใช้ build_where_and_params] =====
 [$whereCnt, $typesCnt, $valsCnt] = build_where_and_params($filterStatus, $filterDtype, $regexMap, $searchQuery);
 $countSql  = "SELECT COUNT(*) AS total FROM device_reports $whereCnt";
 $countStmt = $conn->prepare($countSql);
@@ -141,7 +139,7 @@ $totalRows = (int)($countRes->fetch_assoc()['total'] ?? 0);
 $totalPages = max(1, (int)ceil($totalRows / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
 
-// ===== [แก้ไข 5] อัปเดตการเรียกใช้ build_where_and_params =====
+// ===== [อัปเดตการเรียกใช้ build_where_and_params] =====
 [$whereSel, $typesSel, $valsSel] = build_where_and_params($filterStatus, $filterDtype, $regexMap, $searchQuery);
 $selSql = "SELECT * FROM device_reports $whereSel ORDER BY id DESC LIMIT ? OFFSET ?";
 $typesSel .= "ii";
@@ -255,8 +253,22 @@ $result = $stmt->get_result();
     .kpi .num{font-size:26px;font-weight:900}
     .kpi.new .num{color:var(--red)} .kpi.progress .num{color:var(--blue-strong)} .kpi.done .num{color:var(--green)}
     
-    /* ===== [แก้ไข 6] อัปเดต CSS (เพิ่ม .search-input, .btn-search) ===== */
-    .toolbar{display:flex; align-items:center; justify-content:flex-start; gap:12px; padding:12px 18px; color:#667085; flex-wrap:wrap}
+    
+    /* ===== [ นี่คือจุดที่แก้ไข ] ===== */
+    /* เปลี่ยนจาก justify-content: flex-start เป็น space-between 
+       เพื่อให้ (ซ้าย) (กลาง) (ขวา) สวยงาม */
+    .toolbar{
+        display:flex; 
+        align-items:center; 
+        justify-content:space-between; /* <--- แก้ไขตรงนี้ */
+        gap:12px; 
+        padding:12px 18px; 
+        color:#667085; 
+        flex-wrap:wrap;
+    }
+    /* ============================== */
+
+
     .group{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
     .label{display:flex; align-items:center; gap:8px; font-weight:800; color:#0a2540; letter-spacing:.2px}
     .select{
@@ -272,7 +284,7 @@ $result = $stmt->get_result();
     .select:hover{ transform:translateY(-1px); box-shadow:0 10px 22px rgba(10,37,64,.10) }
     .select:focus{ border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.18) }
 
-    /* [เพิ่มใหม่] สไตล์สำหรับช่องค้นหา */
+    /* [สไตล์สำหรับช่องค้นหา] */
     .search-input {
         -webkit-appearance:none; -moz-appearance:none; appearance:none;
         height:42px; line-height:42px; padding:0 14px; min-width:240px;
@@ -284,7 +296,7 @@ $result = $stmt->get_result();
     .search-input:hover{ transform:translateY(-1px); box-shadow:0 10px 22px rgba(10,37,64,.10) }
     .search-input:focus{ border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.18) }
 
-    /* [เพิ่มใหม่] สไตล์สำหรับปุ่มค้นหา */
+    /* [สไตล์สำหรับปุ่มค้นหา] */
     .btn-search {
         font-family:inherit; font-size:15px; font-weight:700; padding:0 18px;
         height: 42px; line-height: 42px;
@@ -293,7 +305,7 @@ $result = $stmt->get_result();
         transition:all .18s ease;
     }
     .btn-search:hover{ background:#0b63c8; border-color:#0b63c8; }
-    /* [จบส่วนเพิ่มใหม่] */
+    /* [จบส่วน CSS ช่องค้นหา] */
 
 
     .table-wrap{background:#fff;border-top:1px solid var(--line);overflow-x:auto}
@@ -338,7 +350,9 @@ $result = $stmt->get_result();
     .pager a:hover{background:#f3f8ff; border-color:#d6eaff}
     .pager .active{background:#e8f2ff; border-color:#b9dcff; color:#0b63c8}
     .pager .disabled{opacity:.45; pointer-events:none}
+    
     @media (max-width:960px){
+        /* (ส่วน Mobile ไม่ได้แก้ไข เพราะคุณบอกว่าสวยอยู่แล้ว) */
         thead{display:none} 
         tbody tr{
             display:block;
@@ -357,9 +371,11 @@ $result = $stmt->get_result();
             font-weight:800; color:#0f3a66;
         }
         .ellipsis{ max-width:180px; }
+        
+        /* [Mobile CSS] toolbar จะเรียงเป็นแนวตั้ง (อันนี้คือถูกต้องแล้วสำหรับมือถือ) */
         .toolbar{flex-direction:column; align-items:stretch; gap:10px}
         .select{min-width:unset; width:100%}
-        .search-input{min-width:unset; width:100%} /* [เพิ่มใหม่] */
+        .search-input{min-width:unset; width:100%}
         .action-cell{ flex-direction:row; justify-content:center; }
     }
     .modal-overlay {
@@ -484,6 +500,7 @@ $result = $stmt->get_result();
                            value="<?= h($searchQuery) ?>" placeholder="คิว, ชื่อ, S/N, เบอร์...">
                     <button type="submit" class="btn-search" onclick="this.form.page.value=1;">ค้นหา</button>
                 </div>
+
                 <div class="group">
                     <label class="label" for="status">กรองสถานะ:</label>
                     <select class="select" id="status" name="status" onchange="this.form.page.value=1; this.form.submit()">
@@ -550,7 +567,8 @@ $result = $stmt->get_result();
                                 </td>
                                 <td data-label="จัดการ">
                                     <div class="action-cell">
-                                        <form method="POST" action="update_status.php"> <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                                        <form method="POST" action="update_status.php">
+                                            <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                                             <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
                                             <select name="status" class="status-select" onchange="this.form.submit()">
                                                 <option value="new"         <?= $s==='new'?'selected':'' ?> class="select-new">❌ แจ้งซ่อม</option>
@@ -558,7 +576,8 @@ $result = $stmt->get_result();
                                                 <option value="done"        <?= $s==='done'?'selected':'' ?> class="select-done">✅ ซ่อมเสร็จ</option>
                                             </select>
                                         </form>
-                                        <form method="POST" action="delete_report.php" onsubmit="return confirm('ยืนยันลบคิว <?= h($row['queue_number']) ?> (ID: <?= (int)$row['id'] ?>) ?');">
+                                        <form method="POST" action="delete_report.php"
+                                            onsubmit="return confirm('ยืนยันลบคิว <?= h($row['queue_number']) ?> (ID: <?= (int)$row['id'] ?>) ?');">
                                             <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                                             <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
                                             <button type="submit" class="btn-del">ลบ</button>
@@ -737,16 +756,12 @@ document.addEventListener('DOMContentLoaded', () => {
 </div>
 
 <script>
-    // [หมายเหตุ] script ส่วนนี้จะดึงข้อมูลใหม่ทั้งหน้า
-    // มันจะทำงานร่วมกับตัวกรองค้นหาได้ถูกต้อง
     const PING_URL = 'changes_ping.php?role=admin';
     const POLL_MS  = 5000;
     let lastSig = null;
 
     async function pingChanges() {
         try {
-            // URL ของ ping_changes จะไม่มีพารามิเตอร์ค้นหา
-            // ซึ่งถูกต้อง เพราะมันแค่ตรวจสอบ "ลายเซ็น" ว่ามีการเปลี่ยนแปลง *อะไรก็ได้* หรือไม่
             const res = await fetch(PING_URL, { cache: 'no-store' });
             if (!res.ok) return;
             const j = await res.json();
@@ -757,9 +772,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 lastSig = j.sig;
                 const n = document.getElementById('liveNotice');
                 if (n) n.style.display = 'inline-flex';
-                // เมื่อมีการเปลี่ยนแปลง มันจะ reload หน้า *พร้อมกับ* พารามิเตอร์ค้นหาปัจจุบัน
-                // (เช่น ?status=all&dtype=all&q=test&page=1)
-                // ทำให้การค้นหายังคงอยู่
                 setTimeout(() => location.reload(), 800);
             }
         } catch (e) {}
