@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Bangkok');
 // ===== 1. เริ่ม Session และตรวจสอบการ Login (สำคัญมาก) =====
 session_start();
 if (!isset($_SESSION['admin_id'])) {
