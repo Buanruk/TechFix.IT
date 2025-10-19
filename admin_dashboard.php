@@ -48,20 +48,13 @@ function findTechSlug($assignedName, $TECHS){
     }
     return '';
 }
-
-// ===== [แก้ไข 1] รับค่าตัวแปร GET (เพิ่ม $searchQuery) =====
 $filterStatus = $_GET['status'] ?? 'all';
 if (!in_array($filterStatus, ['all','new','in_progress','done'], true)) $filterStatus = 'all';
-
 $filterDtype = $_GET['dtype'] ?? 'all';
 if (!in_array($filterDtype, array_keys($dtypes), true)) $filterDtype = 'all';
-
-$searchQuery = trim($_GET['q'] ?? ''); // <--- [เพิ่มใหม่] รับค่าค้นหา
-
 $perPage = 10;
 $page    = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $offset  = ($page - 1) * $perPage;
-
 function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 function statusText($s){
     return match($s){
@@ -79,15 +72,11 @@ function statusIcon($s){
         default       => '❓',
     };
 }
-
-// ===== [แก้ไข 2] อัปเดต pageUrl (เพิ่ม $searchQuery) =====
-function pageUrl($p, $status, $dtype, $searchQuery){
+function pageUrl($p, $status, $dtype){
     $p = max(1,(int)$p);
-    return '?status='.urlencode($status).'&dtype='.urlencode($dtype).'&q='.urlencode($searchQuery).'&page='.$p;
+    return '?status='.urlencode($status).'&dtype='.urlencode($dtype).'&page='.$p;
 }
-
-// ===== [แก้ไข 3] อัปเดต build_where_and_params (เพิ่ม $searchQuery) =====
-function build_where_and_params($status, $dtype, $regexMap, $searchQuery){
+function build_where_and_params($status, $dtype, $regexMap){
     $wheres = []; $types = ''; $vals = [];
     if ($status !== 'all'){ $wheres[] = "status = ?"; $types .= "s"; $vals[] = $status; }
     if ($dtype  !== 'all' && isset($regexMap[$dtype])){
@@ -95,31 +84,9 @@ function build_where_and_params($status, $dtype, $regexMap, $searchQuery){
         $types   .= "s";
         $vals[]   = strtolower($regexMap[$dtype]);
     }
-    
-    // --- [เพิ่มใหม่] ตรรกะการค้นหา ---
-    if ($searchQuery !== '') {
-        $searchTerm = '%' . $searchQuery . '%';
-        // ค้นหาในฟิลด์เหล่านี้
-        $wheres[] = "(
-            username LIKE ? OR 
-            queue_number LIKE ? OR 
-            serial_number LIKE ? OR 
-            phone_number LIKE ? OR 
-            issue_description LIKE ? OR
-            room LIKE ? OR
-            floor LIKE ? OR
-            assigned_technician LIKE ?
-        )";
-        // เพิ่ม 8 types (s) และ 8 values (ตัวแปร)
-        $types .= "ssssssss"; 
-        array_push($vals, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm);
-    }
-    // --- [จบส่วนเพิ่มใหม่] ---
-
     $whereSQL = $wheres ? ("WHERE ".implode(" AND ", $wheres)) : "";
     return [$whereSQL, $types, $vals];
 }
-
 $stat = ['new'=>0,'in_progress'=>0,'done'=>0,'all'=>0];
 $qr = $conn->query("SELECT status, COUNT(*) AS c FROM device_reports GROUP BY status");
 if ($qr) {
@@ -129,9 +96,7 @@ if ($qr) {
         $stat['all'] += (int)$r['c'];
     }
 }
-
-// ===== [แก้ไข 4] อัปเดตการเรียกใช้ build_where_and_params =====
-[$whereCnt, $typesCnt, $valsCnt] = build_where_and_params($filterStatus, $filterDtype, $regexMap, $searchQuery);
+[$whereCnt, $typesCnt, $valsCnt] = build_where_and_params($filterStatus, $filterDtype, $regexMap);
 $countSql  = "SELECT COUNT(*) AS total FROM device_reports $whereCnt";
 $countStmt = $conn->prepare($countSql);
 if ($typesCnt) $countStmt->bind_param($typesCnt, ...$valsCnt);
@@ -140,9 +105,7 @@ $countRes  = $countStmt->get_result();
 $totalRows = (int)($countRes->fetch_assoc()['total'] ?? 0);
 $totalPages = max(1, (int)ceil($totalRows / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
-
-// ===== [แก้ไข 5] อัปเดตการเรียกใช้ build_where_and_params =====
-[$whereSel, $typesSel, $valsSel] = build_where_and_params($filterStatus, $filterDtype, $regexMap, $searchQuery);
+[$whereSel, $typesSel, $valsSel] = build_where_and_params($filterStatus, $filterDtype, $regexMap);
 $selSql = "SELECT * FROM device_reports $whereSel ORDER BY id DESC LIMIT ? OFFSET ?";
 $typesSel .= "ii";
 $valsSel[] = $perPage;
@@ -229,7 +192,7 @@ $result = $stmt->get_result();
     .panel-head{padding:18px 22px;background:linear-gradient(180deg,rgba(78,169,255,.16),rgba(30,136,229,.10))}
     .title{margin:0;text-align:center;color:#0b2440;font-weight:900}
     
-    /* ===== CSS สำหรับกล่องข้อความแจ้งเตือน ===== */
+    /* ===== 3. เพิ่ม CSS สำหรับกล่องข้อความแจ้งเตือน ===== */
     .alert-box {
         padding: 14px 18px;
         margin-bottom: 20px;
@@ -254,9 +217,7 @@ $result = $stmt->get_result();
     .kpi h4{margin:0 0 4px 0;font-size:13px;color:#0a2540}
     .kpi .num{font-size:26px;font-weight:900}
     .kpi.new .num{color:var(--red)} .kpi.progress .num{color:var(--blue-strong)} .kpi.done .num{color:var(--green)}
-    
-    /* ===== [แก้ไข 6] อัปเดต CSS (เพิ่ม .search-input, .btn-search) ===== */
-    .toolbar{display:flex; align-items:center; justify-content:flex-start; gap:12px; padding:12px 18px; color:#667085; flex-wrap:wrap}
+    .toolbar{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 18px; color:#667085; flex-wrap:wrap}
     .group{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
     .label{display:flex; align-items:center; gap:8px; font-weight:800; color:#0a2540; letter-spacing:.2px}
     .select{
@@ -271,31 +232,6 @@ $result = $stmt->get_result();
     }
     .select:hover{ transform:translateY(-1px); box-shadow:0 10px 22px rgba(10,37,64,.10) }
     .select:focus{ border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.18) }
-
-    /* [เพิ่มใหม่] สไตล์สำหรับช่องค้นหา */
-    .search-input {
-        -webkit-appearance:none; -moz-appearance:none; appearance:none;
-        height:42px; line-height:42px; padding:0 14px; min-width:240px;
-        border:1px solid var(--line); border-radius:12px; background:#fff;
-        font-size:15px; font-weight:700; color:#1f2937; outline:none;
-        box-shadow:0 8px 18px rgba(10,37,64,.06), inset 0 1px 0 rgba(255,255,255,.6);
-        transition: box-shadow .18s ease, border-color .18s ease;
-    }
-    .search-input:hover{ transform:translateY(-1px); box-shadow:0 10px 22px rgba(10,37,64,.10) }
-    .search-input:focus{ border-color:#1e88e5; box-shadow:0 0 0 3px rgba(30,136,229,.18) }
-
-    /* [เพิ่มใหม่] สไตล์สำหรับปุ่มค้นหา */
-    .btn-search {
-        font-family:inherit; font-size:15px; font-weight:700; padding:0 18px;
-        height: 42px; line-height: 42px;
-        border:1px solid var(--blue); border-radius:12px; cursor:pointer;
-        background: var(--blue); color: #fff;
-        transition:all .18s ease;
-    }
-    .btn-search:hover{ background:#0b63c8; border-color:#0b63c8; }
-    /* [จบส่วนเพิ่มใหม่] */
-
-
     .table-wrap{background:#fff;border-top:1px solid var(--line);overflow-x:auto}
     table{ width:100%; border-collapse:separate; border-spacing:0; font-size:14.5px;}
     thead th{position:sticky; top:0; z-index:2; background:linear-gradient(180deg,#f7fbff 0,#eef6ff 100%); color:#0f3a66; font-weight:800; letter-spacing:.2px; padding:14px 16px; border-bottom:1px solid var(--line); text-align:left;}
@@ -359,7 +295,6 @@ $result = $stmt->get_result();
         .ellipsis{ max-width:180px; }
         .toolbar{flex-direction:column; align-items:stretch; gap:10px}
         .select{min-width:unset; width:100%}
-        .search-input{min-width:unset; width:100%} /* [เพิ่มใหม่] */
         .action-cell{ flex-direction:row; justify-content:center; }
     }
     .modal-overlay {
@@ -421,31 +356,33 @@ $result = $stmt->get_result();
                 <span></span><span></span><span></span>
             </button>
             <div id="navMenu" class="nav-menu" role="menu" aria-hidden="true">
-                <a href="admin_dashboard.php" class="menu-item home" role="menuitem">
-                    <span class="menu-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg>
-                    </span>
-                    หน้าหลัก
-                </a>
-                <a href="manage_technicians.php" class="menu-item" role="menuitem">
-                    <span class="menu-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    </span>
-                    จัดการช่าง
-                </a>
-                <a href="admin_create_technician.php" class="menu-item" role="menuitem">
-                    <span class="menu-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="23" y1="11" x2="17" y2="11"></line><line x1="20" y1="8" x2="20" y2="14"></line></svg>
-                    </span>
-                    เพิ่มช่างใหม่
-                </a>
-                <a href="logout.php" class="menu-item logout" role="menuitem">
-                    <span class="menu-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M15 12H3"></path><path d="M11 8l-4 4 4 4"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg>
-                    </span>
-                    ออกจากระบบ
-                </a>
-            </div>
+    <a href="admin_dashboard.php" class="menu-item home" role="menuitem">
+        <span class="menu-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg>
+        </span>
+        หน้าหลัก
+    </a>
+
+    <a href="manage_technicians.php" class="menu-item" role="menuitem">
+        <span class="menu-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </span>
+        จัดการช่าง
+    </a>
+    <a href="admin_create_technician.php" class="menu-item" role="menuitem">
+        <span class="menu-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="23" y1="11" x2="17" y2="11"></line><line x1="20" y1="8" x2="20" y2="14"></line></svg>
+        </span>
+        เพิ่มช่างใหม่
+    </a>
+
+    <a href="logout.php" class="menu-item logout" role="menuitem">
+        <span class="menu-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M15 12H3"></path><path d="M11 8l-4 4 4 4"></path><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path></svg>
+        </span>
+        ออกจากระบบ
+    </a>
+</div>
         </div>
     </nav>
 </header>
@@ -467,7 +404,6 @@ $result = $stmt->get_result();
                 <div class="kpi progress"><h4>กำลังซ่อม</h4><div class="num"><?= (int)$stat['in_progress'] ?></div></div>
                 <div class="kpi done"><h4>ซ่อมเสร็จ</h4><div class="num"><?= (int)$stat['done'] ?></div></div>
             </div>
-            
             <form class="toolbar" method="get">
                 <div class="group">
                     <label class="label" for="dtype">กรองอุปกรณ์:</label>
@@ -476,13 +412,6 @@ $result = $stmt->get_result();
                             <option value="<?= h($slug) ?>" <?= $filterDtype===$slug?'selected':'' ?>><?= h($label) ?></option>
                         <?php endforeach; ?>
                     </select>
-                </div>
-                
-                <div class="group">
-                    <label class="label" for="q">ค้นหา:</label>
-                    <input type="text" class="search-input" id="q" name="q" 
-                           value="<?= h($searchQuery) ?>" placeholder="คิว, ชื่อ, S/N, เบอร์...">
-                    <button type="submit" class="btn-search" onclick="this.form.page.value=1;">ค้นหา</button>
                 </div>
                 <div class="group">
                     <label class="label" for="status">กรองสถานะ:</label>
@@ -493,8 +422,7 @@ $result = $stmt->get_result();
                         <option value="done"        <?= $filterStatus==='done' ? 'selected' : '' ?>>✅ ซ่อมเสร็จ</option>
                     </select>
                 </div>
-                
-                <input type="hidden" name="page" value="1">
+                <input type="hidden" name="page" value="<?= (int)$page ?>">
             </form>
 
             <div class="table-wrap">
@@ -517,11 +445,8 @@ $result = $stmt->get_result();
                             <th class="tc">มอบหมายช่าง</th></tr>
                     </thead>
                     <tbody>
-                    
                     <?php if ($result->num_rows === 0): ?>
-                        <tr><td colspan="6" class="empty">
-                            <?= $searchQuery !== '' ? 'ไม่พบรายการที่ตรงกับการค้นหา' : 'ยังไม่มีรายการตามเงื่อนไขที่เลือก' ?>
-                        </td></tr>
+                        <tr><td colspan="6" class="empty">ยังไม่มีรายการตามเงื่อนไขที่เลือก</td></tr>
                     <?php else: ?>
                         <?php while($row = $result->fetch_assoc()): ?>
                             <?php
@@ -550,7 +475,8 @@ $result = $stmt->get_result();
                                 </td>
                                 <td data-label="จัดการ">
                                     <div class="action-cell">
-                                        <form method="POST" action="update_status.php"> <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                                        <form method="POST" action="/update_status.php">
+                                            <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                                             <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
                                             <select name="status" class="status-select" onchange="this.form.submit()">
                                                 <option value="new"         <?= $s==='new'?'selected':'' ?> class="select-new">❌ แจ้งซ่อม</option>
@@ -558,7 +484,8 @@ $result = $stmt->get_result();
                                                 <option value="done"        <?= $s==='done'?'selected':'' ?> class="select-done">✅ ซ่อมเสร็จ</option>
                                             </select>
                                         </form>
-                                        <form method="POST" action="delete_report.php" onsubmit="return confirm('ยืนยันลบคิว <?= h($row['queue_number']) ?> (ID: <?= (int)$row['id'] ?>) ?');">
+                                        <form method="POST" action="/delete_report.php"
+                                            onsubmit="return confirm('ยืนยันลบคิว <?= h($row['queue_number']) ?> (ID: <?= (int)$row['id'] ?>) ?');">
                                             <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
                                             <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
                                             <button type="submit" class="btn-del">ลบ</button>
@@ -569,28 +496,28 @@ $result = $stmt->get_result();
                                     <button class="btn-details">รายละเอียดเพิ่มเติม</button>
                                 </td>
                                 <td class="tc" data-label="มอบหมายช่าง">
-                                    <?php
-                                        $assignedTechId = $row['technician_id'] ?? 0;
-                                    ?>
-                                    <form method="POST" action="assign_technician.php">
-                                        <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-                                        <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+    <?php
+        $assignedTechId = $row['technician_id'] ?? 0;
+    ?>
+    <form method="POST" action="assign_technician.php">
+        <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+        <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
 
-                                        <select name="technician_id" class="status-select" onchange="if(this.value) this.form.submit()">
-                                            <option value="">-- เลือกช่าง --</option>
+        <select name="technician_id" class="status-select" onchange="if(this.value) this.form.submit()">
+            <option value="">-- เลือกช่าง --</option>
 
-                                            <?php foreach ($technician_list as $tech): ?>
-                                                <option 
-                                                    value="<?= h($tech['id']) ?>" 
-                                                    <?= ((int)$assignedTechId === (int)$tech['id']) ? 'selected' : '' ?>>
+            <?php foreach ($technician_list as $tech): ?>
+                <option 
+                    value="<?= h($tech['id']) ?>" 
+                    <?= ((int)$assignedTechId === (int)$tech['id']) ? 'selected' : '' ?>>
 
-                                                    <?= h($tech['fullname']) ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </form>
-                                </td>
-                            </tr>
+                    <?= h($tech['fullname']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </form>
+</td>
+                                </tr>
                         <?php endwhile; ?>
                     <?php endif; ?>
                     </tbody>
@@ -599,26 +526,26 @@ $result = $stmt->get_result();
 
             <nav class="pager" aria-label="เปลี่ยนหน้า">
                 <?php $prev = $page - 1; $next = $page + 1; ?>
-                <a class="<?= $page<=1 ? 'disabled':'' ?>" href="<?= $page<=1 ? '#' : h(pageUrl($prev,$filterStatus,$filterDtype, $searchQuery)) ?>" aria-label="ก่อนหน้า">«</a>
+                <a class="<?= $page<=1 ? 'disabled':'' ?>" href="<?= $page<=1 ? '#' : h(pageUrl($prev,$filterStatus,$filterDtype)) ?>" aria-label="ก่อนหน้า">«</a>
                 <?php
                     $window = 2;
                     $start = max(1, $page - $window);
                     $end   = min($totalPages, $page + $window);
 
                     if ($start > 1){
-                        echo '<a href="'.h(pageUrl(1,$filterStatus,$filterDtype, $searchQuery)).'">1</a>';
+                        echo '<a href="'.h(pageUrl(1,$filterStatus,$filterDtype)).'">1</a>';
                         if ($start > 2) echo '<span class="disabled">…</span>';
                     }
                     for($p=$start; $p<=$end; $p++){
                         if ($p == $page) echo '<span class="active">'.$p.'</span>';
-                        else echo '<a href="'.h(pageUrl($p,$filterStatus,$filterDtype, $searchQuery)).'">'.$p.'</a>';
+                        else echo '<a href="'.h(pageUrl($p,$filterStatus,$filterDtype)).'">'.$p.'</a>';
                     }
                     if ($end < $totalPages){
                         if ($end < $totalPages-1) echo '<span class="disabled">…</span>';
-                        echo '<a href="'.h(pageUrl($totalPages,$filterStatus,$filterDtype, $searchQuery)).'">'.$totalPages.'</a>';
+                        echo '<a href="'.h(pageUrl($totalPages,$filterStatus,$filterDtype)).'">'.$totalPages.'</a>';
                     }
                 ?>
-                <a class="<?= $page>=$totalPages ? 'disabled':'' ?>" href="<?= $page>=$totalPages ? '#' : h(pageUrl($next,$filterStatus,$filterDtype, $searchQuery)) ?>" aria-label="ถัดไป">»</a>
+                <a class="<?= $page>=$totalPages ? 'disabled':'' ?>" href="<?= $page>=$totalPages ? '#' : h(pageUrl($next,$filterStatus,$filterDtype)) ?>" aria-label="ถัดไป">»</a>
                 <span class="disabled" style="border:none">หน้า <?= $page ?> / <?= $totalPages ?> • ทั้งหมด <?= number_format($totalRows) ?> รายการ</span>
             </nav>
 
@@ -737,16 +664,12 @@ document.addEventListener('DOMContentLoaded', () => {
 </div>
 
 <script>
-    // [หมายเหตุ] script ส่วนนี้จะดึงข้อมูลใหม่ทั้งหน้า
-    // มันจะทำงานร่วมกับตัวกรองค้นหาได้ถูกต้อง
     const PING_URL = 'changes_ping.php?role=admin';
     const POLL_MS  = 5000;
     let lastSig = null;
 
     async function pingChanges() {
         try {
-            // URL ของ ping_changes จะไม่มีพารามิเตอร์ค้นหา
-            // ซึ่งถูกต้อง เพราะมันแค่ตรวจสอบ "ลายเซ็น" ว่ามีการเปลี่ยนแปลง *อะไรก็ได้* หรือไม่
             const res = await fetch(PING_URL, { cache: 'no-store' });
             if (!res.ok) return;
             const j = await res.json();
@@ -757,9 +680,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 lastSig = j.sig;
                 const n = document.getElementById('liveNotice');
                 if (n) n.style.display = 'inline-flex';
-                // เมื่อมีการเปลี่ยนแปลง มันจะ reload หน้า *พร้อมกับ* พารามิเตอร์ค้นหาปัจจุบัน
-                // (เช่น ?status=all&dtype=all&q=test&page=1)
-                // ทำให้การค้นหายังคงอยู่
                 setTimeout(() => location.reload(), 800);
             }
         } catch (e) {}
