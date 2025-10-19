@@ -49,14 +49,14 @@ function findTechSlug($assignedName, $TECHS){
     return '';
 }
 
-// ===== [รับค่าตัวแปร GET (เพิ่ม $searchQuery)] =====
+// ===== 1. รับค่าตัวแปร GET (เพิ่ม $searchQuery) =====
 $filterStatus = $_GET['status'] ?? 'all';
 if (!in_array($filterStatus, ['all','new','in_progress','done'], true)) $filterStatus = 'all';
 
 $filterDtype = $_GET['dtype'] ?? 'all';
 if (!in_array($filterDtype, array_keys($dtypes), true)) $filterDtype = 'all';
 
-$searchQuery = trim($_GET['q'] ?? ''); // <--- [รับค่าค้นหา]
+$searchQuery = trim($_GET['q'] ?? ''); // <--- [เพิ่มใหม่] รับค่าค้นหา
 
 $perPage = 10;
 $page    = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
@@ -80,14 +80,14 @@ function statusIcon($s){
     };
 }
 
-// ===== [อัปเดต pageUrl (เพิ่ม $searchQuery)] =====
-function pageUrl($p, $status, $dtype, $searchQuery){
+// ===== 2. อัปเดต pageUrl (เพิ่ม $searchQuery) =====
+function pageUrl($p, $status, $dtype, $searchQuery){ // <--- เพิ่ม $searchQuery
     $p = max(1,(int)$p);
     return '?status='.urlencode($status).'&dtype='.urlencode($dtype).'&q='.urlencode($searchQuery).'&page='.$p;
 }
 
-// ===== [อัปเดต build_where_and_params (เพิ่ม $searchQuery)] =====
-function build_where_and_params($status, $dtype, $regexMap, $searchQuery){
+// ===== 3. อัปเดต build_where_and_params (เพิ่ม $searchQuery) =====
+function build_where_and_params($status, $dtype, $regexMap, $searchQuery){ // <--- เพิ่ม $searchQuery
     $wheres = []; $types = ''; $vals = [];
     if ($status !== 'all'){ $wheres[] = "status = ?"; $types .= "s"; $vals[] = $status; }
     if ($dtype  !== 'all' && isset($regexMap[$dtype])){
@@ -96,9 +96,10 @@ function build_where_and_params($status, $dtype, $regexMap, $searchQuery){
         $vals[]   = strtolower($regexMap[$dtype]);
     }
     
-    // --- [ตรรกะการค้นหา] ---
+    // --- [เพิ่มใหม่] ตรรกะการค้นหา ---
     if ($searchQuery !== '') {
         $searchTerm = '%' . $searchQuery . '%';
+        // ค้นหาในฟิลด์เหล่านี้
         $wheres[] = "(
             username LIKE ? OR 
             queue_number LIKE ? OR 
@@ -109,10 +110,11 @@ function build_where_and_params($status, $dtype, $regexMap, $searchQuery){
             floor LIKE ? OR
             assigned_technician LIKE ?
         )";
+        // เพิ่ม 8 types (s) และ 8 values (ตัวแปร)
         $types .= "ssssssss"; 
         array_push($vals, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm);
     }
-    // --- [จบส่วนค้นหา] ---
+    // --- [จบส่วนเพิ่มใหม่] ---
 
     $whereSQL = $wheres ? ("WHERE ".implode(" AND ", $wheres)) : "";
     return [$whereSQL, $types, $vals];
@@ -128,7 +130,7 @@ if ($qr) {
     }
 }
 
-// ===== [อัปเดตการเรียกใช้ build_where_and_params] =====
+// ===== 4. อัปเดตการเรียกใช้ build_where_and_params =====
 [$whereCnt, $typesCnt, $valsCnt] = build_where_and_params($filterStatus, $filterDtype, $regexMap, $searchQuery);
 $countSql  = "SELECT COUNT(*) AS total FROM device_reports $whereCnt";
 $countStmt = $conn->prepare($countSql);
@@ -139,7 +141,7 @@ $totalRows = (int)($countRes->fetch_assoc()['total'] ?? 0);
 $totalPages = max(1, (int)ceil($totalRows / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
 
-// ===== [อัปเดตการเรียกใช้ build_where_and_params] =====
+// ===== 5. อัปเดตการเรียกใช้ build_where_and_params =====
 [$whereSel, $typesSel, $valsSel] = build_where_and_params($filterStatus, $filterDtype, $regexMap, $searchQuery);
 $selSql = "SELECT * FROM device_reports $whereSel ORDER BY id DESC LIMIT ? OFFSET ?";
 $typesSel .= "ii";
@@ -253,7 +255,6 @@ $result = $stmt->get_result();
     .kpi .num{font-size:26px;font-weight:900}
     .kpi.new .num{color:var(--red)} .kpi.progress .num{color:var(--blue-strong)} .kpi.done .num{color:var(--green)}
     
-    
     /* ===== [ นี่คือจุดที่แก้ไข ] ===== */
     /* เปลี่ยนจาก justify-content: flex-start เป็น space-between 
        เพื่อให้ (ซ้าย) (กลาง) (ขวา) สวยงาม */
@@ -267,7 +268,6 @@ $result = $stmt->get_result();
         flex-wrap:wrap;
     }
     /* ============================== */
-
 
     .group{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
     .label{display:flex; align-items:center; gap:8px; font-weight:800; color:#0a2540; letter-spacing:.2px}
@@ -640,8 +640,7 @@ $result = $stmt->get_result();
                 <a class="<?= $page>=$totalPages ? 'disabled':'' ?>" href="<?= $page>=$totalPages ? '#' : h(pageUrl($next,$filterStatus,$filterDtype, $searchQuery)) ?>" aria-label="ถัดไป">»</a>
                 <span class="disabled" style="border:none">หน้า <?= $page ?> / <?= $totalPages ?> • ทั้งหมด <?= number_format($totalRows) ?> รายการ</span>
             </nav>
-
-        </section>
+            </section>
 
         <div class="footer" style="text-align:center;color:#667085;margin-top:18px">
             © <?= date('Y') ?> TechFix — ระบบแจ้งซ่อมคอมพิวเตอร์
@@ -772,6 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 lastSig = j.sig;
                 const n = document.getElementById('liveNotice');
                 if (n) n.style.display = 'inline-flex';
+                // Reload หน้า โดยยังคงพารามิเตอร์ (q=...&status=...&page=...)
                 setTimeout(() => location.reload(), 800);
             }
         } catch (e) {}
