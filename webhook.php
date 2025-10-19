@@ -138,9 +138,9 @@ try {
     "INSERT INTO device_reports
      (username, phone_number, serial_number, device_type, floor,
       issue_description, report_date, queue_number, line_user_id, status)
-     VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?, 'new')"
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')"
   );
-  $stmt->bind_param("ssssssss", $nickname, $phone, $serial, $device, $floor, $issue, $queueCode, $lineUserId);
+  $stmt->bind_param("ssssssss", $nickname, $phone, $serial, $device, $floor, $issue, $current_datetime, $queueCode, $lineUserId);
   $stmt->execute();
   $stmt->close();
 
