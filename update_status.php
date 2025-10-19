@@ -41,7 +41,7 @@ if ($id > 0 && in_array($status, $allowed, true)) {
     $q->close();
 
     if (!empty($job['line_user_id'])) {
-      $msg = "แจ้งเตือนจาก TechFix.it\n"
+      $msg = "แจ้งเตือนจาก techfix.asia\n"
            . "งานซ่อมคิว: " . ($job['queue_number'] ?? '-') . "\n"
            . "สถานะ: ✅ ซ่อมเสร็จแล้ว\n"
            . "อุปกรณ์: {$job['device_type']} | SN: {$job['serial_number']}\n"
