@@ -507,32 +507,32 @@ $result = $stmt->get_result();
                                         </form>
                                     </div>
                                 </td>
-                                <td class="tc" data-label="รายละเอียด">
-                                    <button class="btn-details">รายละเอียดเพิ่มเติม</button>
-                                </td>
-                                <td class="tc" data-label="มอบหมายช่าง">
-    <?php
-        $assignedTechId = $row['technician_id'] ?? 0;
-    ?>
-    <form method="POST" action="assign_technician.php">
-        <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-        <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
+                               <td class="tc" data-label="มอบหมายช่าง">
+                            <?php
+                                $assignedTechId = $row['technician_id'] ?? 0;
+                            ?>
+                            <form method="POST" action="assign_technician.php">
+                                <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                                <input type="hidden" name="redirect" value="<?= h($_SERVER['REQUEST_URI']) ?>">
 
-        <select name="technician_id" class="status-select" onchange="if(this.value) this.form.submit()">
-            <option value="">-- เลือกช่าง --</option>
+                                <select name="technician_id" class="status-select" onchange="if(this.value) this.form.submit()">
+                                    <option value="">-- เลือกช่าง --</option>
 
-            <?php foreach ($technician_list as $tech): ?>
-                <option 
-                    value="<?= h($tech['id']) ?>" 
-                    <?= ((int)$assignedTechId === (int)$tech['id']) ? 'selected' : '' ?>>
+                                    <?php foreach ($technician_list as $tech): ?>
+                                    <option 
+                                        value="<?= h($tech['id']) ?>" 
+                                        <?= ((int)$assignedTechId === (int)$tech['id']) ? 'selected' : '' ?>>
 
-                    <?= h($tech['fullname']) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </form>
-</td>
-                                </tr>
+                                        <?= h($tech['fullname']) ?>
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </form>
+                        </td>
+                        <td class="tc" data-label="รายละเอียด">
+                            <button class="btn-details">รายละเอียดเพิ่มเติม</button>
+                        </td>
+                    </tr>
                         <?php endwhile; ?>
                     <?php endif; ?>
                     </tbody>
