@@ -16,3 +16,8 @@ if ($conn->connect_error) {
 }
 
 $conn->set_charset('utf8mb4');
+
+// ✅ เพิ่มบรรทัดนี้เพื่อตั้งค่า Timezone ของการเชื่อมต่อ
+$conn->query("SET time_zone = '+07:00';"); 
+
+?>
