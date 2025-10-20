@@ -432,17 +432,16 @@ $result = $stmt->get_result();
                         <col style="width: 20%;">
                         <col style="width: 15%;">
                         <col style="width: 20%;">
-                        <col style="width: 15%;">
-                        <col style="width: 22%;">
+                        <col style="width: 22%;"> <col style="width: 15%;"> 
                     </colgroup>
                     <thead>
-                        <tr>
-                            <th class="tc">คิว</th>
-                            <th>ชื่อผู้แจ้ง</th>
-                            <th class="tc">สถานะ</th>
-                            <th class="tc">เปลี่ยนสถานะ / ลบ</th>
-                            <th class="tc">รายละเอียด</th>
-                            <th class="tc">มอบหมายช่าง</th></tr>
+                            <tr>
+                                <th class="tc">คิว</th>
+                                <th>ชื่อผู้แจ้ง</th>
+                                <th class="tc">สถานะ</th>
+                                <th class="tc">เปลี่ยนสถานะ / ลบ</th>
+                                <th class="tc">มอบหมายช่าง</th>
+                                <th class="tc">รายละเอียด</th></tr>
                     </thead>
                     <tbody>
                     <?php if ($result->num_rows === 0): ?>
@@ -492,9 +491,6 @@ $result = $stmt->get_result();
                                         </form>
                                     </div>
                                 </td>
-                                <td class="tc" data-label="รายละเอียด">
-                                    <button class="btn-details">รายละเอียดเพิ่มเติม</button>
-                                </td>
                                 <td class="tc" data-label="มอบหมายช่าง">
     <?php
         $assignedTechId = $row['technician_id'] ?? 0;
@@ -507,17 +503,20 @@ $result = $stmt->get_result();
             <option value="">-- เลือกช่าง --</option>
 
             <?php foreach ($technician_list as $tech): ?>
-                <option 
-                    value="<?= h($tech['id']) ?>" 
-                    <?= ((int)$assignedTechId === (int)$tech['id']) ? 'selected' : '' ?>>
+            <option 
+                value="<?= h($tech['id']) ?>" 
+                <?= ((int)$assignedTechId === (int)$tech['id']) ? 'selected' : '' ?>>
 
-                    <?= h($tech['fullname']) ?>
-                </option>
+                <?= h($tech['fullname']) ?>
+            </option>
             <?php endforeach; ?>
         </select>
     </form>
 </td>
-                                </tr>
+                                <td class="tc" data-label="รายละเอียด">
+                                    <button class="btn-details">รายละเอียดเพิ่มเติม</button>
+                                </td>
+                                    </tr>
                         <?php endwhile; ?>
                     <?php endif; ?>
                     </tbody>
