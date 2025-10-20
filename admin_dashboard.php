@@ -449,11 +449,27 @@ $result = $stmt->get_result();
                     <?php else: ?>
                         <?php while($row = $result->fetch_assoc()): ?>
                             <?php
-                                $room = $row['room'] ?? ($row['floor'] ?? '');
-                                $s = in_array($row['status'], ['new','in_progress','done']) ? $row['status'] : 'new';
-                                $reportTime = h(@date('d/m/Y H:i', strtotime($row['report_date'])) ?: $row['report_date']);
-                                $assignedTech = $row['assigned_technician'] ?? null;
-                            ?>
+    $room = $row['room'] ?? ($row['floor'] ?? '');
+    $s = in_array($row['status'], ['new','in_progress','done']) ? $row['status'] : 'new';
+    
+    // --- ⬇️ โค้ดแก้เวลาอยู่ตรงนี้ ---
+    try {
+        // 1. อ่านเวลาจาก DB (เช่น 19:51) แล้วบอกว่าเป็นเวลา UTC
+        $utc_time = new DateTime($row['report_date'], new DateTimeZone('UTC'));
+        
+        // 2. สั่งแปลงเวลาเป็น Asia/Bangkok (บวก 7 ชั่วโมง)
+        $utc_time->setTimezone(new DateTimeZone('Asia/Bangkok'));
+        
+        // 3. จัดรูปแบบ (เช่น 02:51)
+        $reportTime = h($utc_time->format('d/m/Y H:i'));
+    } catch (Exception $e) {
+        // ถ้าวันที่มันแปลกๆ อ่านค่าไม่ได้ ก็แสดงผลแบบเดิมไปก่อน
+        $reportTime = h($row['report_date']);
+    }
+    // --- ⬆️ จบโค้ดแก้เวลา ---
+
+    $assignedTech = $row['assigned_technician'] ?? null;
+?>
                             <tr
                                 data-queue="<?= h($row['queue_number']) ?>"
                                 data-username="<?= h($row['username']) ?>"
