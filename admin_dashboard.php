@@ -425,8 +425,6 @@ $result = $stmt->get_result();
                 <input type="hidden" name="page" value="<?= (int)$page ?>">
             </form>
 
-            <div class="table-wrap">
-                <table>
                     <colgroup>
                         <col style="width: 8%;">
                         <col style="width: 20%;">
@@ -467,9 +465,6 @@ $result = $stmt->get_result();
         $reportTime = h($row['report_date']);
     }
     // ❌ ไม่ต้องมี ?> อีก
-
-    $assignedTech = $row['assigned_technician'] ?? null;
-?> // <-- นี่คือบรรทัด 471
                             <tr
                                 data-queue="<?= h($row['queue_number']) ?>"
                                 data-username="<?= h($row['username']) ?>"
