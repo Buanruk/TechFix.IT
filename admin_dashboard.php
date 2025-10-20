@@ -425,6 +425,8 @@ $result = $stmt->get_result();
                 <input type="hidden" name="page" value="<?= (int)$page ?>">
             </form>
 
+            <div class="table-wrap">
+                <table>
                     <colgroup>
                         <col style="width: 8%;">
                         <col style="width: 20%;">
@@ -440,31 +442,18 @@ $result = $stmt->get_result();
                                 <th class="tc">เปลี่ยนสถานะ / ลบ</th>
                                 <th class="tc">มอบหมายช่าง</th>
                                 <th class="tc">รายละเอียด</th></tr>
-                    </thead>
+                        </thead>
                     <tbody>
                     <?php if ($result->num_rows === 0): ?>
                         <tr><td colspan="6" class="empty">ยังไม่มีรายการตามเงื่อนไขที่เลือก</td></tr>
                     <?php else: ?>
                         <?php while($row = $result->fetch_assoc()): ?>
-                            <?php // <-- นี่คือบรรทัด 451
-    $room = $row['room'] ?? ($row['floor'] ?? '');
-    $s = in_array($row['status'], ['new','in_progress','done']) ? $row['status'] : 'new';
-
-    // ❌ ไม่ต้องมี <?php อีก
-    try {
-        // 1. อ่านเวลาจาก DB (เช่น 19:51) แล้วบอกว่าเป็นเวลา UTC
-        $utc_time = new DateTime($row['report_date'], new DateTimeZone('UTC'));
-        
-        // 2. สั่งแปลงเวลาเป็น Asia/Bangkok (บวก 7 ชั่วโมง)
-        $utc_time->setTimezone(new DateTimeZone('Asia/Bangkok'));
-        
-        // 3. จัดรูปแบบ (เช่น 02:51)
-        $reportTime = h($utc_time->format('d/m/Y H:i'));
-    } catch (Exception $e) {
-        // ถ้าวันที่มันแปลกๆ อ่านค่าไม่ได้ ก็แสดงผลแบบเดิมไปก่อน
-        $reportTime = h($row['report_date']);
-    }
-    // ❌ ไม่ต้องมี ?> อีก
+                            <?php
+                                $room = $row['room'] ?? ($row['floor'] ?? '');
+                                $s = in_array($row['status'], ['new','in_progress','done']) ? $row['status'] : 'new';
+                                $reportTime = h(@date('d/m/Y H:i', strtotime($row['report_date'])) ?: $row['report_date']);
+                                $assignedTech = $row['assigned_technician'] ?? null;
+                            ?>
                             <tr
                                 data-queue="<?= h($row['queue_number']) ?>"
                                 data-username="<?= h($row['username']) ?>"
@@ -502,6 +491,9 @@ $result = $stmt->get_result();
                                         </form>
                                     </div>
                                 </td>
+                                <td class="tc" data-label="รายละเอียด">
+                                    <button class="btn-details">รายละเอียดเพิ่มเติม</button>
+                                </td>
                                 <td class="tc" data-label="มอบหมายช่าง">
     <?php
         $assignedTechId = $row['technician_id'] ?? 0;
@@ -514,20 +506,17 @@ $result = $stmt->get_result();
             <option value="">-- เลือกช่าง --</option>
 
             <?php foreach ($technician_list as $tech): ?>
-            <option 
-                value="<?= h($tech['id']) ?>" 
-                <?= ((int)$assignedTechId === (int)$tech['id']) ? 'selected' : '' ?>>
+                <option 
+                    value="<?= h($tech['id']) ?>" 
+                    <?= ((int)$assignedTechId === (int)$tech['id']) ? 'selected' : '' ?>>
 
-                <?= h($tech['fullname']) ?>
-            </option>
+                    <?= h($tech['fullname']) ?>
+                </option>
             <?php endforeach; ?>
         </select>
     </form>
 </td>
-                                <td class="tc" data-label="รายละเอียด">
-                                    <button class="btn-details">รายละเอียดเพิ่มเติม</button>
-                                </td>
-                                    </tr>
+                                </tr>
                         <?php endwhile; ?>
                     <?php endif; ?>
                     </tbody>
