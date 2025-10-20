@@ -168,7 +168,7 @@ $result = $stmt->get_result();
     .panel{border-radius:var(--radius);border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
     .panel-head{padding:18px 22px;background:linear-gradient(180deg,rgba(78,169,255,.16),rgba(30,136,229,.10))}
     .title{margin:0;text-align:center;color:#0b2440;font-weight:900}
-    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px 20px 8px}
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px 20px 8px}
     .kpi{border:1px solid var(--line);border-radius:16px;padding:12px 14px;background:#fff;box-shadow:0 10px 24px rgba(15,40,80,.06)}
     .kpi h4{margin:0 0 4px 0;font-size:13px;color:#0a2540}
     .kpi .num{font-size:26px;font-weight:900}
@@ -266,7 +266,6 @@ $result = $stmt->get_result();
             <header class="panel-head"><h1 class="title">งานซ่อมช่าง (<?= h($logged_in_technician_fullname) ?>)</h1></header>
             <div class="kpis">
                 <div class="kpi total"><h4>ทั้งหมด</h4><div class="num"><?= (int)$stat['all'] ?></div></div>
-                <div class="kpi new"><h4>งานใหม่</h4><div class="num"><?= (int)$stat['new'] ?></div></div>
                 <div class="kpi progress"><h4>กำลังทำ</h4><div class="num"><?= (int)$stat['in_progress'] ?></div></div>
                 <div class="kpi done"><h4>ทำเสร็จ</h4><div class="num"><?= (int)$stat['done'] ?></div></div>
             </div>
