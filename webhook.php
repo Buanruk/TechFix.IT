@@ -14,8 +14,23 @@ header('Content-Type: application/json; charset=utf-8');
 function log_to(string $fname, string $text): void {
   @file_put_contents(__DIR__ . "/$fname", '['.date('Y-m-d H:i:s')."] $text\n", FILE_APPEND);
 }
-function find_user_id_recursive($arr) { /* ... (โค้ดเหมือนเดิม) ... */ }
-function clean_issue(string $txt): string { /* ... (โค้ดเหมือนเดิม) ... */ }
+function find_user_id_recursive($arr) {
+  if (!is_array($arr)) return null;
+  foreach ($arr as $k => $v) {
+    if ($k === 'userId' && is_string($v) && $v !== '') return $v;
+    if (is_array($v)) {
+      $r = find_user_id_recursive($v);
+      if ($r) return $r;
+    }
+  }
+  return null;
+}
+function clean_issue(string $txt): string {
+  $txt = html_entity_decode($txt, ENT_QUOTES, 'UTF-8');
+  $txt = preg_replace('/^\s*(ปัญหา(เรื่อง)?|อาการ|issue)\s*[:：\-]?\s*/iu', '', $txt);
+  $txt = preg_replace('/\s+/u', ' ', trim($txt));
+  return $txt;
+}
 function send_json_and_exit(array $payload): void {
   if (ob_get_length() !== false) { ob_clean(); }
   echo json_encode($payload, JSON_UNESCAPED_UNICODE);
@@ -34,11 +49,23 @@ if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
 
 /* ทักทาย/รีเซ็ต (เหมือนเดิม) */
 $userMessage = trim($data['queryResult']['queryText'] ?? '');
-if ($userMessage !== '' && preg_match('/สวัสดี|เริ่มใหม่/i', $userMessage)) { /* ... (โค้ดเหมือนเดิม) ... */ }
+if ($userMessage !== '' && preg_match('/สวัสดี|เริ่มใหม่/i', $userMessage)) {
+  send_json_and_exit([
+    "fulfillmentText" => "สวัสดีครับ เริ่มต้นการแจ้งซ่อมใหม่ได้เลยครับ",
+    "outputContexts"  => []
+  ]);
+}
 
 /* ===== ดึง LINE userId (เหมือนเดิม) ===== */
 $lineUserId = null;
-/* ... (โค้ดดึง userId ทั้งหมดเหมือนเดิม) ... */
+$odi = $data['originalDetectIntentRequest']['payload'] ?? [];
+if (!$lineUserId && !empty($odi['data']['source']['userId']))            $lineUserId = $odi['data']['source']['userId'];
+if (!$lineUserId && !empty($odi['data']['events'][0]['source']['userId'])) $lineUserId = $odi['data']['events'][0]['source']['userId'];
+if (!$lineUserId && !empty($odi['source']['userId']))                     $lineUserId = $odi['source']['userId'];
+if (!$lineUserId && !empty($data['originalDetectIntentRequest']['source']['userId']))
+  $lineUserId = $data['originalDetectIntentRequest']['source']['userId'];
+if (!$lineUserId) $lineUserId = find_user_id_recursive($data['originalDetectIntentRequest'] ?? []);
+if (!$lineUserId) $lineUserId = find_user_id_recursive($odi);
 log_to('df_userid.log', 'userId=' . ($lineUserId ?: 'NULL'));
 
 
@@ -87,12 +114,6 @@ if (!$device) {
 /* ===== ตรวจสอบ Action และความครบ ===== */
 
 // ชื่อ Action ของ Intent 1 (ที่เก็บ 4 อย่าง)
-// (จากรูป image_13f460.png -> 'TechFix.IT.TechFixIT-custom')
-$// [--- 2. แก้ไข: ตรวจสอบ Action ก่อนเช็คความครบถ้วน ---]
-
-/* ===== ตรวจสอบ Action และความครบ ===== */
-
-// ชื่อ Action ของ Intent 1 (ที่เก็บ 4 อย่าง)
 $intent1_action = 'TechFix.IT.TechFixIT-custom'; 
 
 // ชื่อ Action ของ Intent 2 (Follow-up ที่เก็บเบอร์)
@@ -100,52 +121,51 @@ $intent2_action = 'TechFix.IT.TechFixIT-custom.TechFixIT-typeissue-custom';
 
 
 if ($action === $intent1_action) {
-    // --- นี่คือ Call จาก Intent 1 (เก็บ 4 อย่างแรก) ---
-    
-    // ไม่ต้องทำอะไรเลย... แค่ส่ง JSON ว่างๆ กลับไป
-    // เพื่อให้ Dialogflow รู้ตัวว่า Webhook ทำงานเสร็จแล้ว และไปทำ Follow-up Intent (ถามเบอร์) ต่อ
-    send_json_and_exit([]);
+    // --- นี่คือ Call จาก Intent 1 (เก็บ 4 อย่างแรก) ---
+    
+    // ไม่ต้องทำอะไรเลย... แค่ส่ง JSON ว่างๆ กลับไป
+    // เพื่อให้ Dialogflow รู้ตัวว่า Webhook ทำงานเสร็จแล้ว และไปทำ Follow-up Intent (ถามเบอร์) ต่อ
+    send_json_and_exit([]);
 
 } else if ($action === $intent2_action) {
-    // --- นี่คือ Call จาก Intent 2 (เก็บเบอร์โทร) ---
+    // --- นี่คือ Call จาก Intent 2 (เก็บเบอร์โทร) ---
 
-    // $phone ถูกดึงมาจาก $all_params (บรรทัด 85)
-    if (!$phone) {
-        // **ยังไม่มีเบอร์โทร** -> นี่คือการเรียก webhook *ก่อน* ที่บอทจะถาม
-        // ส่ง JSON ว่างๆ กลับไป เพื่อให้ Dialogflow ถาม Prompt (เบอร์โทร) ของมันเอง
-        send_json_and_exit([]);
-    }
+    // $phone ถูกดึงมาจาก $all_params (บรรทัด 85)
+    if (!$phone) {
+        // **ยังไม่มีเบอร์โทร** -> นี่คือการเรียก webhook *ก่อน* ที่บอทจะถาม
+        // เราต้องส่ง "คำถาม" กลับไปให้ผู้ใช้เอง
+        send_json_and_exit([
+            "fulfillmentText" => "เบอร์โทรที่สามารถติดต่อกลับได้ครับ"
+        ]);
+    }
 
-    // **มีเบอร์โทรแล้ว** -> นี่คือการเรียก webhook *หลัง* จากที่ผู้ใช้ป้อนเบอร์โทรแล้ว
-    // ให้ทำการตรวจสอบความครบถ้วน (รวมเบอร์โทรด้วย)
-    $missing = [];
-    if (!$nickname) $missing[] = "ชื่อเล่น";
-    if (!$serial)   $missing[] = "หมายเลขเครื่อง";
-    if (!$phone)     $missing[] = "เบอร์โทร"; // (เช็คอีกทีเผื่อหลุด)
-    if (!$device)   $missing[] = "อุปกรณ์";
-    if ($issue==='') $missing[] = "ปัญหา";
-    if (!$floor)     $missing[] = "เลขห้อง";
+    // **มีเบอร์โทรแล้ว** -> นี่คือการเรียก webhook *หลัง* จากที่ผู้ใช้ป้อนเบอร์โทรแล้ว
+    // ให้ทำการตรวจสอบความครบถ้วน (รวมเบอร์โทรด้วย)
+    $missing = [];
+    if (!$nickname) $missing[] = "ชื่อเล่น";
+    if (!$serial)   $missing[] = "หมายเลขเครื่อง";
+    if (!$phone)     $missing[] = "เบอร์โทร"; // (เช็คอีกทีเผื่อหลุด)
+    if (!$device)   $missing[] = "อุปกรณ์";
+    if ($issue==='') $missing[] = "ปัญหา";
+    if (!$floor)     $missing[] = "เลขห้อง";
 
-    if ($missing) {
-        // ถ้ายังไม่ครบ (เช่น เบอร์โทรหลุด หรือ context พัง)
-        send_json_and_exit([
-            "fulfillmentText" => "ข้อมูลไม่ครบ: " . implode(", ", $missing) . " กรุณากรอกให้ครบครับ"
-        ]);
-    }
-    
-    // ถ้าครบแล้ว... ให้โค้ดทำงานต่อไป (เพื่อ INSERT ลง DB)
+    if ($missing) {
+        // ถ้ายังไม่ครบ (เช่น เบอร์โทรหลุด หรือ context พัง)
+        send_json_and_exit([
+            "fulfillmentText" => "ข้อมูลไม่ครบ: " . implode(", ", $missing) . " กรุณากรอกให้ครบครับ"
+        ]);
+    }
+    
+    // ถ้าครบแล้ว... ให้โค้ดทำงานต่อไป (เพื่อ INSERT ลง DB)
 
 } else {
-    // ไม่รู้จัก Action นี้ หรือเป็น Action เก่า
-    log_to('df_action.log', 'Unknown or non-final action: ' . $action);
-    // ในที่นี้เราจะสมมติว่าถ้า Action ไม่ตรง ก็ยังไม่ควรบันทึก
-    send_json_and_exit([]); // ส่งว่างๆ กลับไปก่อน
+    // ไม่รู้จัก Action นี้ หรือเป็น Action เก่า
+    log_to('df_action.log', 'Unknown or non-final action: ' . $action);
+    // ในที่นี้เราจะสมมติว่าถ้า Action ไม่ตรง ก็ยังไม่ควรบันทึก
+    send_json_and_exit([]); // ส่งว่างๆ กลับไปก่อน
 }
 
 // ถ้าโค้ดมาถึงนี่ได้ แปลว่า $action === $intent2_action, $phone มีค่าแล้ว, และ $missing ว่างเปล่า
-// โค้ดส่วนที่เหลือ (DB Insert) จะทำงานตามปกติ
-
-// ถ้าโค้ดมาถึงนี่ได้ แปลว่า $action === $intent2_action และ $missing ว่างเปล่า
 // โค้ดส่วนที่เหลือ (DB Insert) จะทำงานตามปกติ
 
 
@@ -158,8 +178,13 @@ try {
   // สร้างเลขคิว (เหมือนเดิม)
   $dateForQueue = date("j/n/y");
   $queuePrefix  = $dateForQueue . "/";
-  /* ... (โค้ดสร้าง $queueCode ทั้งหมดเหมือนเดิม) ... */
-  $stmtQ = $conn->prepare( "SELECT ... " );
+//--- (โค้ดสร้าง $queueCode ที่เหลือเหมือนเดิม) ---
+  $stmtQ = $conn->prepare(
+    "SELECT queue_number FROM device_reports
+     WHERE DATE(report_date) = CURDATE()
+       AND queue_number LIKE CONCAT(?, '%')
+     ORDER BY report_date DESC LIMIT 1"
+  );
   $stmtQ->bind_param("s", $queuePrefix);
   $stmtQ->execute();
   $latestQueue = ($stmtQ->get_result()->fetch_assoc()['queue_number'] ?? null);
@@ -170,6 +195,7 @@ try {
     else { $newPrefix = chr(ord($prefix) + 1); $newNumber = 1; }
   } else { $newPrefix = 'A'; $newNumber = 1; }
   $queueCode = $queuePrefix . $newPrefix . $newNumber;
+//--- (จบโค้ดสร้าง $queueCode) ---
 
 
   // INSERT (เหมือนเดิม)
@@ -185,7 +211,12 @@ try {
 
   // ผูก userId ย้อนหลัง (เหมือนเดิม)
   if ($lineUserId && $phone) {
-    $u = $conn->prepare( "UPDATE ... " );
+    $u = $conn->prepare(
+      "UPDATE device_reports
+       SET line_user_id = ?
+       WHERE phone_number = ?
+         AND (line_user_id IS NULL OR line_user_id='')"
+    );
     $u->bind_param("ss", $lineUserId, $phone);
     $u->execute();
     $u->close();
