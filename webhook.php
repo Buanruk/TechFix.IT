@@ -88,49 +88,62 @@ if (!$device) {
 
 // ชื่อ Action ของ Intent 1 (ที่เก็บ 4 อย่าง)
 // (จากรูป image_13f460.png -> 'TechFix.IT.TechFixIT-custom')
+$// [--- 2. แก้ไข: ตรวจสอบ Action ก่อนเช็คความครบถ้วน ---]
+
+/* ===== ตรวจสอบ Action และความครบ ===== */
+
+// ชื่อ Action ของ Intent 1 (ที่เก็บ 4 อย่าง)
 $intent1_action = 'TechFix.IT.TechFixIT-custom'; 
 
 // ชื่อ Action ของ Intent 2 (Follow-up ที่เก็บเบอร์)
-// (จากรูป image_13edfa.png -> 'TechFix.IT.TechFixIT-custom.TechFixIT-typeissue-custom')
 $intent2_action = 'TechFix.IT.TechFixIT-custom.TechFixIT-typeissue-custom';
 
 
 if ($action === $intent1_action) {
-  // --- นี่คือ Call จาก Intent 1 (เก็บ 4 อย่างแรก) ---
-  
-  // ไม่ต้องทำอะไรเลย... แค่ส่ง JSON ว่างๆ กลับไป
-  // เพื่อให้ Dialogflow รู้ตัวว่า Webhook ทำงานเสร็จแล้ว และไปทำ Follow-up Intent (ถามเบอร์) ต่อ
-  send_json_and_exit([]);
+    // --- นี่คือ Call จาก Intent 1 (เก็บ 4 อย่างแรก) ---
+    
+    // ไม่ต้องทำอะไรเลย... แค่ส่ง JSON ว่างๆ กลับไป
+    // เพื่อให้ Dialogflow รู้ตัวว่า Webhook ทำงานเสร็จแล้ว และไปทำ Follow-up Intent (ถามเบอร์) ต่อ
+    send_json_and_exit([]);
 
 } else if ($action === $intent2_action) {
-  // --- นี่คือ Call จาก Intent 2 (เก็บเบอร์โทร) ---
-  
-  // ตอนนี้ $all_params ควรมีครบ 5-6 อย่างแล้ว
-  // ทำการตรวจสอบความครบถ้วน
-  $missing = [];
-  if (!$nickname) $missing[] = "ชื่อเล่น";
-  if (!$serial)   $missing[] = "หมายเลขเครื่อง";
-  if (!$phone)    $missing[] = "เบอร์โทร"; // <--- เช็คเบอร์โทรตรงนี้
-  if (!$device)   $missing[] = "อุปกรณ์";
-  if ($issue==='')$missing[] = "ปัญหา";
-  if (!$floor)    $missing[] = "เลขห้อง";
+    // --- นี่คือ Call จาก Intent 2 (เก็บเบอร์โทร) ---
 
-  if ($missing) {
-    // ถ้ายังไม่ครบ (เช่น เบอร์โทรหลุด) ค่อยส่ง Error
-    send_json_and_exit([
-      "fulfillmentText" => "ข้อมูลไม่ครบ: " . implode(", ", $missing) . " กรุณากรอกให้ครบครับ"
-    ]);
-  }
-  
-  // ถ้าครบแล้ว... ให้โค้ดทำงานต่อไป (เพื่อ INSERT ลง DB)
+    // $phone ถูกดึงมาจาก $all_params (บรรทัด 85)
+    if (!$phone) {
+        // **ยังไม่มีเบอร์โทร** -> นี่คือการเรียก webhook *ก่อน* ที่บอทจะถาม
+        // ส่ง JSON ว่างๆ กลับไป เพื่อให้ Dialogflow ถาม Prompt (เบอร์โทร) ของมันเอง
+        send_json_and_exit([]);
+    }
+
+    // **มีเบอร์โทรแล้ว** -> นี่คือการเรียก webhook *หลัง* จากที่ผู้ใช้ป้อนเบอร์โทรแล้ว
+    // ให้ทำการตรวจสอบความครบถ้วน (รวมเบอร์โทรด้วย)
+    $missing = [];
+    if (!$nickname) $missing[] = "ชื่อเล่น";
+    if (!$serial)   $missing[] = "หมายเลขเครื่อง";
+    if (!$phone)     $missing[] = "เบอร์โทร"; // (เช็คอีกทีเผื่อหลุด)
+    if (!$device)   $missing[] = "อุปกรณ์";
+    if ($issue==='') $missing[] = "ปัญหา";
+    if (!$floor)     $missing[] = "เลขห้อง";
+
+    if ($missing) {
+        // ถ้ายังไม่ครบ (เช่น เบอร์โทรหลุด หรือ context พัง)
+        send_json_and_exit([
+            "fulfillmentText" => "ข้อมูลไม่ครบ: " . implode(", ", $missing) . " กรุณากรอกให้ครบครับ"
+        ]);
+    }
+    
+    // ถ้าครบแล้ว... ให้โค้ดทำงานต่อไป (เพื่อ INSERT ลง DB)
 
 } else {
-  // ไม่รู้จัก Action นี้ หรือเป็น Action เก่า
-  log_to('df_action.log', 'Unknown or non-final action: ' . $action);
-  // (อาจจะส่ง Error หรือปล่อยผ่าน ขึ้นอยู่กับว่ามี Intent อื่นอีกหรือไม่)
-  // ในที่นี้เราจะสมมติว่าถ้า Action ไม่ตรง ก็ยังไม่ควรบันทึก
-  send_json_and_exit([]); // ส่งว่างๆ กลับไปก่อน
+    // ไม่รู้จัก Action นี้ หรือเป็น Action เก่า
+    log_to('df_action.log', 'Unknown or non-final action: ' . $action);
+    // ในที่นี้เราจะสมมติว่าถ้า Action ไม่ตรง ก็ยังไม่ควรบันทึก
+    send_json_and_exit([]); // ส่งว่างๆ กลับไปก่อน
 }
+
+// ถ้าโค้ดมาถึงนี่ได้ แปลว่า $action === $intent2_action, $phone มีค่าแล้ว, และ $missing ว่างเปล่า
+// โค้ดส่วนที่เหลือ (DB Insert) จะทำงานตามปกติ
 
 // ถ้าโค้ดมาถึงนี่ได้ แปลว่า $action === $intent2_action และ $missing ว่างเปล่า
 // โค้ดส่วนที่เหลือ (DB Insert) จะทำงานตามปกติ
