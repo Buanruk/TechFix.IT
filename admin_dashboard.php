@@ -451,7 +451,21 @@ $result = $stmt->get_result();
                             <?php
                                 $room = $row['room'] ?? ($row['floor'] ?? '');
                                 $s = in_array($row['status'], ['new','in_progress','done']) ? $row['status'] : 'new';
-                                $reportTime = h(@date('d/m/Y H:i', strtotime($row['report_date'])) ?: $row['report_date']);
+                                <?php
+    try {
+        // 1. สร้าง object เวลา โดยบอกว่าเวลาที่อ่านมา (19:51) เป็นเวลา UTC
+        $utc_time = new DateTime($row['report_date'], new DateTimeZone('UTC'));
+
+        // 2. สั่งให้แปลงเป็นเวลา Asia/Bangkok (บวก 7 ชั่วโมง)
+        $utc_time->setTimezone(new DateTimeZone('Asia/Bangkok'));
+
+        // 3. จัดรูปแบบเพื่อแสดงผล
+        $reportTime = h($utc_time->format('d/m/Y H:i'));
+    } catch (Exception $e) {
+        // ถ้าวันที่แปลกๆ ก็แสดงผลแบบเดิมไปก่อน
+        $reportTime = h($row['report_date']);
+    }
+?>
                                 $assignedTech = $row['assigned_technician'] ?? null;
                             ?>
                             <tr
