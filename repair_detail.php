@@ -48,6 +48,7 @@ function build_where_and_params($status, $dtype, $regexMap, $searchQuery){
     if ($searchQuery !== '') {
         $searchTerm = '%' . $searchQuery . '%';
         // ค้นหาจาก: ชื่อ, อุปกรณ์, ชั้น, หมายเลขเครื่อง หรือ ID
+        // (ยังคงค้นหาจากฟิลด์เดิม แม้จะไม่ได้แสดงผล เพื่อไม่ให้กระทบฟังก์ชันการค้นหา)
         $wheres[] = "(
             username LIKE ? OR 
             device_type LIKE ? OR 
@@ -103,9 +104,9 @@ if (isset($_GET['poll']) && $_GET['poll'] === 'status') {
 }
 
 /* ===== ตั้งค่าการแบ่งหน้า ===== */
-$perPage  = 10;
-$page     = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$offset   = ($page - 1) * $perPage;
+$perPage   = 10;
+$page      = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset    = ($page - 1) * $perPage;
 
 /* ===== นับจำนวนทั้งหมด (ตามตัวกรอง status+dtype+search) ===== */
 // [แก้ไข] ส่ง $searchQuery เข้าไปด้วย
@@ -122,11 +123,17 @@ $totalPages = max(1, (int)ceil($totalRows / $perPage));
 if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $perPage; }
 
 /* ===== ดึงรายการตามตัวกรอง + LIMIT/OFFSET ===== */
+// ===== [ จุดแก้ไขที่ 1 ] =====
+// เพิ่มคอลัมน์ queue_id (หรือชื่อคอลัมน์คิวของคุณ) และตั้งชื่อเล่นว่า queue
+// เรายัง SELECT ฟิลด์เดิมไว้ (device, floor, device_no) เพื่อให้ระบบค้นหายังทำงานได้
 $baseSelect = "
     SELECT id, username AS fullname, device_type AS device, floor,
-           serial_number AS device_no, status
+           serial_number AS device_no, status,
+           queue_number AS queue 
     FROM device_reports
 ";
+// ===== [ จบจุดแก้ไขที่ 1 ] =====
+
 // [แก้ไข] ส่ง $searchQuery เข้าไปด้วย
 [$whereSQL, $types, $vals] = build_where_and_params($filterStatus, $filterDtype, $regexMap, $searchQuery);
 $sql = "$baseSelect $whereSQL ORDER BY id DESC LIMIT ? OFFSET ?";
@@ -328,10 +335,8 @@ function page_url($p, $status, $dtype, $searchQuery){
                 <thead>
                     <tr>
                         <th>ลำดับ</th>
+                        <th>คิว</th>
                         <th>ชื่อ-สกุล</th>
-                        <th>อุปกรณ์</th>
-                        <th>ชั้นที่</th>
-                        <th>หมายเลขเครื่อง</th>
                         <th>สถานะ</th>
                     </tr>
                 </thead>
@@ -341,19 +346,17 @@ function page_url($p, $status, $dtype, $searchQuery){
                         <?php $st = $status_map[$row['status']] ?? ['label'=>'ไม่ทราบ','color'=>'gray']; ?>
                         <tr data-id="<?= (int)$row['id'] ?>">
                             <td data-label="ลำดับ"><?= (int)$row['id'] ?></td>
+                            <td data-label="คิว"><?= h($row['queue']) ?></td>
                             <td data-label="ชื่อ-สกุล"><?= h($row['fullname']) ?></td>
-                            <td data-label="อุปกรณ์"><?= h($row['device']) ?></td>
-                            <td data-label="ชั้นที่"><?= h($row['floor']) ?></td>
-                            <td data-label="หมายเลขเครื่อง"><?= h($row['device_no']) ?></td>
                             <td data-label="สถานะ" class="status-cell">
                                 <span class="status-dot <?= h($st['color']) ?>"></span>
                                 <span class="status-label txt-<?= h($st['color']) ?>"><?= h($st['label']) ?></span>
                             </td>
-                        </tr>
+                            </tr>
                     <?php endwhile; ?>
                 <?php else: ?>
-                    <tr><td colspan="6"><?= $searchQuery !== '' ? 'ไม่พบข้อมูลที่ตรงกับการค้นหา' : 'ไม่มีข้อมูลการแจ้งซ่อม' ?></td></tr>
-                <?php endif; ?>
+                    <tr><td colspan="4"><?= $searchQuery !== '' ? 'ไม่พบข้อมูลที่ตรงกับการค้นหา' : 'ไม่มีข้อมูลการแจ้งซ่อม' ?></td></tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
