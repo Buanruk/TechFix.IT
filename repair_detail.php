@@ -313,7 +313,7 @@ function page_url($p, $status, $dtype, $searchQuery){
             <div class="group">
                 <label class="label" for="q">ค้นหา:</label>
                 <input type="text" class="search-input" id="q" name="q" 
-                       value="<?= h($searchQuery) ?>" placeholder="ชื่อ, S/N, ชั้น, ID...">
+                       value="<?= h($searchQuery) ?>" placeholder="ชื่อ, คิวแจ้งซ่อม">
                 <button type="submit" class="btn-search" onclick="this.form.page.value=1;">ค้นหา</button>
             </div>
             <div class="group">
