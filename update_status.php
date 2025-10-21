@@ -44,7 +44,8 @@ if ($id > 0 && in_array($status, $allowed, true)) {
       $msg = "แจ้งเตือนจาก techfix.asia\n"
            . "งานซ่อมคิว: " . ($job['queue_number'] ?? '-') . "\n"
            . "สถานะ: ✅ ซ่อมเสร็จแล้ว\n"
-           . "อุปกรณ์: {$job['device_type']} | ชั้น: {$job['serial_number']}\n"
+           . "อุปกรณ์: {$job['device_type']}\n"
+           . "ชั้น: {$job['serial_number']}\n"
            . "ปัญหา: {$job['issue_description']}";
 
       // === ส่ง LINE Push (สำคัญ: header ต้องเป็นสตริงแบบนี้) ===
