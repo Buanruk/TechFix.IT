@@ -245,6 +245,7 @@ function t($key) {
                 <li>1 LINE ID แจ้งได้หลายอุปกรณ์ (โครงสร้าง <code>one-to-many</code> + <code>user token</code>)</li>
                 <li>ช่วยตรวจคำผิดด้วย AI</li>
                 <li>คำนึงถึงความปลอดภัยของข้อมูลส่วนบุคคล</li>
+                <li>การเก็บข้อมูลเพื่อพัฒนาความเสถียร</li>
             </ul>
         </div>
         <div class="reveal">

@@ -275,12 +275,6 @@ function page_url($p, $status, $dtype, $searchQuery){
     </style>
 </head>
 <body>
-<video autoplay muted loop playsinline id="bg-video">
-    <source src="video/your_clip.mp4" type="video/mp4">
-    เบราว์เซอร์ของคุณไม่รองรับวิดีโอแท็ก
-</video>
-<header class="site-header">
-    <nav class="navbar">
 
 <header class="site-header">
     <nav class="navbar">
