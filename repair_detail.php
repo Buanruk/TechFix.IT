@@ -44,22 +44,21 @@ function build_where_and_params($status, $dtype, $regexMap, $searchQuery){
         $vals[]   = strtolower($regexMap[$dtype]);
     }
 
-    // ===== [เพิ่มใหม่] ตรรกะการค้นหา =====
+// ===== [แก้ไข] ตรรกะการค้นหา (เพิ่ม คิว) =====
     if ($searchQuery !== '') {
         $searchTerm = '%' . $searchQuery . '%';
-        // ค้นหาจาก: ชื่อ, อุปกรณ์, ชั้น, หมายเลขเครื่อง หรือ ID
-        // (ยังคงค้นหาจากฟิลด์เดิม แม้จะไม่ได้แสดงผล เพื่อไม่ให้กระทบฟังก์ชันการค้นหา)
+        // ค้นหาจาก: คิว, ชื่อ, อุปกรณ์, ชั้น, หมายเลขเครื่อง หรือ ID
         $wheres[] = "(
+            queue_number LIKE ? OR 
             username LIKE ? OR 
             device_type LIKE ? OR 
             floor LIKE ? OR 
             serial_number LIKE ? OR
             id = ?
         )";
-        $types .= "sssss";
-        array_push($vals, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchQuery);
+        $types .= "ssssss"; // เพิ่ม s 1 ตัว
+        array_push($vals, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchQuery); // เพิ่ม $searchTerm 1 ตัว
     }
-    // ===== [จบส่วนเพิ่มใหม่] =====
 
     $whereSQL = $wheres ? ("WHERE ".implode(" AND ", $wheres)) : "";
     return [$whereSQL, $types, $vals];
