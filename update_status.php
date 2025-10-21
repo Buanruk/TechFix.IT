@@ -41,11 +41,13 @@ if ($id > 0 && in_array($status, $allowed, true)) {
     $q->close();
 
     if (!empty($job['line_user_id'])) {
-      $msg = "แจ้งเตือนจาก techfix.asia\n"
-           . "งานซ่อมคิว: " . ($job['queue_number'] ?? '-') . "\n"
-           . "สถานะ: ✅ ซ่อมเสร็จแล้ว\n"
-           . "อุปกรณ์: {$job['device_type']} | SN: {$job['serial_number']}\n"
-           . "ปัญหา: {$job['issue_description']}";
+  $msg = "แจ้งเตือนจาก techfix.asia\n"
+       . "งานซ่อมคิว: " . ($job['queue_number'] ?? '-') . "\n"
+       . "สถานะ: ✅ ซ่อมเสร็จแล้ว\n"
+       . "อุปกรณ์: {$job['device_type']}\n"  // 1. ลบส่วน SN: ออก แล้วขึ้นบรรทัดใหม่
+       . "ชั้น: {$job['serial_number']}\n"    // 2. เพิ่มบรรทัดใหม่นี้
+       . "ปัญหา: {$job['issue_description']}";
+    }
 
       // === ส่ง LINE Push (สำคัญ: header ต้องเป็นสตริงแบบนี้) ===
       $url = 'https://api.line.me/v2/bot/message/push';
