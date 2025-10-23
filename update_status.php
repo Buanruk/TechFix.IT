@@ -32,9 +32,9 @@ if ($id > 0 && in_array($status, $allowed, true)) {
 
   // ถ้าเปลี่ยนเป็น done → ดึงข้อมูลแล้ว push LINE
   if ($status === 'done') {
-    $q = $conn->prepare("SELECT username, device_type, serial_number, issue_description,
-                                queue_number, line_user_id
-                         FROM device_reports WHERE id = ?");
+    $q = $conn->prepare("SELECT username, device_type, serial_number, floor, issue_description, 
+                     queue_number, line_user_id
+                     FROM device_reports WHERE id = ?");
     $q->bind_param("i", $id);
     $q->execute();
     $job = $q->get_result()->fetch_assoc();
@@ -45,7 +45,8 @@ if ($id > 0 && in_array($status, $allowed, true)) {
            . "งานซ่อมคิว: " . ($job['queue_number'] ?? '-') . "\n"
            . "สถานะ: ✅ ซ่อมเสร็จแล้ว\n"
            . "อุปกรณ์: {$job['device_type']}\n"
-           . "ชั้น: {$job['serial_number']}\n"
+           . "หมายเลขเครื่อง: {$job['serial_number']}\n"
+           . "ชั้น: {$job['floor']}\n"
            . "ปัญหา: {$job['issue_description']}";
 
       // === ส่ง LINE Push (สำคัญ: header ต้องเป็นสตริงแบบนี้) ===
