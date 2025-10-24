@@ -302,21 +302,29 @@ if ($lineUserId)
       CURLOPT_POST => true,
       CURLOPT_HTTPHEADER => [
         "Content-Type: application/json",
-        "Authorization: Bearer $LINE_TOKEN"
+        "Authorization: " . "Bearer " . $LINE_TOKEN
       ],
       CURLOPT_POSTFIELDS => json_encode($msg, JSON_UNESCAPED_UNICODE)
     ]);
 
-    // *** 5. เพิ่มโค้ดดักจับ Error ***
+    //
+    // ‼️‼️ อัปเกรดตัวดักจับ Error (เวอร์ชันล่าสุด) ‼️‼️
+    //
     $curl_response = curl_exec($ch);
     $curl_error = curl_error($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE); // <- เพิ่มการตรวจสอบ HTTP Code
     curl_close($ch);
 
     if ($curl_error) {
-        // ถ้า curl ล้มเหลว ให้บันทึก Error ลง log
-        error_log('LINE Push Error: ' . $curl_error);
+        // ถ้า curl ล้มเหลว (เช่น Time out, SSL)
+        error_log('LINE Push cURL Error: ' . $curl_error);
+    } elseif ($http_code != 200 && $http_code != 202) {
+        // ถ้า LINE ตอบกลับมาว่าไม่ใช่ 200 OK (เช่น 401 Token ผิด, 400 Bad Request)
+        error_log('LINE Push API Error: HTTP Code ' . $http_code . ' | Response: ' . $curl_response);
     }
-    // *** จบส่วนดักจับ Error ***
+    //
+    // ‼️‼️ จบการอัปเกรด ‼️‼️
+    //
 } 
 /* ===== จบส่วนส่ง LINE ===== */
 
