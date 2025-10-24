@@ -175,7 +175,7 @@ $pdf = new tFPDF('P', 'mm', 'A4'); // P=Portrait, mm=millimeters
 $pdf->AddPage();
 $pdf->SetAutoPageBreak(false); 
 
-// *** 3. เพิ่มฟอนต์ THSarabunNew (ที่คุณเพิ่งเพิ่มไฟล์) ***
+// *** 3. เพิ่มฟอนต์ THSarabunNew (ที่อยู่ใน /fpdf/font/unifont/) ***
 $pdf->AddFont('Sarabun','','THSarabunNew.ttf', true);
 $pdf->AddFont('Sarabun','B','THSarabunNew Bold.ttf', true); 
 
@@ -187,7 +187,7 @@ $startX = ($pageWidth - $slipWidth) / 2;
 $startY = 30; 
 $padding = 8; 
 $contentX = $startX + $padding; 
-$contentWidth = $slipWidth - ($padding * 2); 
+$contentWidth = $slipWidth - ($padding * 2); // ‼️‼️ FIX: $contentWidth ถูกสร้างตรงนี้ ‼️‼️
 
 // --- 1. วาดกรอบสี่เหลี่ยม ---
 $pdf->SetDrawColor(0, 84, 166); 
@@ -226,8 +226,11 @@ if (preg_match('/([A-Z])(\d+)$/', $queueCode, $m)) {
 $lineHeight = 7; 
 $labelWidth = 30; 
 
-// --- ฟังก์ชันช่วยวาด 1 แถว (เวอร์ชันแก้ไขตัวอักษรเละ) ---
-function drawRow($pdf, $label, $value, $contentX, $labelWidth, $lineHeight) {
+//
+// ‼️‼️ FIX: แก้ไขฟังก์ชัน drawRow ทั้งหมด ‼️‼️
+//
+// --- ฟังก์ชันช่วยวาด 1 แถว (เวอร์ชันแก้ไขตัวอักษรเละ + รับ $contentWidth) ---
+function drawRow($pdf, $label, $value, $contentX, $contentWidth, $labelWidth, $lineHeight) {
     // เก็บตำแหน่ง Y เริ่มต้นของแถวนี้
     $startY = $pdf->GetY();
 
@@ -236,7 +239,7 @@ function drawRow($pdf, $label, $value, $contentX, $labelWidth, $lineHeight) {
     $pdf->SetXY($contentX, $startY); // กำหนดตำแหน่ง
     $pdf->MultiCell($labelWidth, $lineHeight, $label . ':', 0, 'L');
     
-    // เก็บตำแหน่ง Y สุดท้าย เผื่อหัวข้อมันยาวขึ้น 2 บรรทัด (ซึ่งไม่น่าเกิด)
+    // เก็บตำแหน่ง Y สุดท้าย
     $labelEndY = $pdf->GetY();
 
     // --- วาด Value (ข้อมูล) ---
@@ -244,22 +247,26 @@ function drawRow($pdf, $label, $value, $contentX, $labelWidth, $lineHeight) {
     $pdf->SetXY($contentX + $labelWidth, $startY); // กำหนดตำแหน่ง (กลับไปที่ Y เริ่มต้น)
     $pdf->MultiCell($contentWidth - $labelWidth, $lineHeight, $value, 0, 'L');
     
-    // เก็บตำแหน่ง Y สุดท้าย เผื่อข้อมูล (เช่น ปัญหา) มันยาวขึ้น 2 บรรทัด
+    // เก็บตำแหน่ง Y สุดท้าย
     $valueEndY = $pdf->GetY();
 
     // เลื่อนตำแหน่ง Y ของ PDF ไปรอแถวถัดไป โดยอิงจากแถวที่ "สูงที่สุด"
     $pdf->SetY(max($labelEndY, $valueEndY));
 }
 
-// --- วาดข้อมูลลง PDF ---
-drawRow($pdf, 'วันที่', $datePart, $contentX, $labelWidth, $lineHeight);
-drawRow($pdf, 'เลขที่ใบซ่อม', $queuePart, $contentX, $labelWidth, $lineHeight);
-drawRow($pdf, 'ผู้แจ้ง', $nickname, $contentX, $labelWidth, $lineHeight);
-drawRow($pdf, 'เบอร์โทร', $phone, $contentX, $labelWidth, $lineHeight);
-drawRow($pdf, 'ห้อง', $floor, $contentX, $labelWidth, $lineHeight);
-drawRow($pdf, 'อุปกรณ์', $device, $contentX, $labelWidth, $lineHeight); 
-drawRow($pdf, 'หมายเลขเครื่อง', $serial, $contentX, $labelWidth, $lineHeight);
-drawRow($pdf, 'ปัญหา', $issue, $contentX, $labelWidth, $lineHeight);
+// --- วาดข้อมูลลง PDF (‼️ FIX: เพิ่ม $contentWidth เข้าไป ‼️) ---
+drawRow($pdf, 'วันที่', $datePart, $contentX, $contentWidth, $labelWidth, $lineHeight);
+drawRow($pdf, 'เลขที่ใบซ่อม', $queuePart, $contentX, $contentWidth, $labelWidth, $lineHeight);
+drawRow($pdf, 'ผู้แจ้ง', $nickname, $contentX, $contentWidth, $labelWidth, $lineHeight);
+drawRow($pdf, 'เบอร์โทร', $phone, $contentX, $contentWidth, $labelWidth, $lineHeight);
+drawRow($pdf, 'ห้อง', $floor, $contentX, $contentWidth, $labelWidth, $lineHeight);
+drawRow($pdf, 'อุปกรณ์', $device, $contentX, $contentWidth, $labelWidth, $lineHeight); 
+drawRow($pdf, 'หมายเลขเครื่อง', $serial, $contentX, $contentWidth, $labelWidth, $lineHeight);
+drawRow($pdf, 'ปัญหา', $issue, $contentX, $contentWidth, $labelWidth, $lineHeight);
+
+//
+// ‼️‼️ จบการแก้ไขส่วน drawRow ‼️‼️
+//
 
 // --- 6. บันทึกไฟล์ PDF ---
 $pdf->Output('F', $pdfPath); 
@@ -268,7 +275,7 @@ $pdf->Output('F', $pdfPath);
 
 
 /* ===== ส่งกลับเข้า LINE ===== */
-// (ผมใช้ Token ของคุณที่ใส่มาครั้งที่แล้ว ถ้าเปลี่ยนต้องแก้ตรงนี้)
+// *** 4. ใส่ TOKEN และ DOMAIN ของคุณตรงนี้ ***
 $LINE_TOKEN = '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU='; 
 $DOMAIN_URL = 'https://techfix.asia'; // (ต้องเป็น HTTPS)
 
@@ -300,7 +307,7 @@ if ($lineUserId)
       CURLOPT_POSTFIELDS => json_encode($msg, JSON_UNESCAPED_UNICODE)
     ]);
     
-    // *** เพิ่มโค้ดดักจับ Error ***
+    // *** 5. เพิ่มโค้ดดักจับ Error ***
     $curl_response = curl_exec($ch);
     $curl_error = curl_error($ch);
     curl_close($ch);
