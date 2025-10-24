@@ -3,10 +3,10 @@ declare(strict_types=1);
 date_default_timezone_set('Asia/Bangkok');
 
 /* ===== Error handling: ห้าม echo error ออกจอ ให้ log ลงไฟล์แทน ===== */
-ini_set('display_errors', '0');                      // สำคัญ: ปิดการโชว์ error มิฉะนั้น JSON จะพัง
+ini_set('display_errors', '0');                  // สำคัญ: ปิดการโชว์ error มิฉะนั้น JSON จะพัง
 ini_set('log_errors', '1');
-ini_set('error_log', __DIR__ . '/php_error.log');    // ดูด้วย: tail -n 50 php_error.log
-ob_start();                                           // กัน output หลุดมาก่อน JSON
+ini_set('error_log', __DIR__ . '/php_error.log');
+ob_start();                                      // กัน output หลุดมาก่อน JSON
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -65,9 +65,9 @@ if ($userMessage !== '' && preg_match('/สวัสดี|เริ่มให
 /* ===== ดึง LINE userId ===== */
 $lineUserId = null;
 $odi = $data['originalDetectIntentRequest']['payload'] ?? [];
-if (!$lineUserId && !empty($odi['data']['source']['userId']))            $lineUserId = $odi['data']['source']['userId'];
+if (!$lineUserId && !empty($odi['data']['source']['userId']))        $lineUserId = $odi['data']['source']['userId'];
 if (!$lineUserId && !empty($odi['data']['events'][0]['source']['userId'])) $lineUserId = $odi['data']['events'][0]['source']['userId'];
-if (!$lineUserId && !empty($odi['source']['userId']))                     $lineUserId = $odi['source']['userId'];
+if (!$lineUserId && !empty($odi['source']['userId']))                 $lineUserId = $odi['source']['userId'];
 if (!$lineUserId && !empty($data['originalDetectIntentRequest']['source']['userId']))
   $lineUserId = $data['originalDetectIntentRequest']['source']['userId'];
 if (!$lineUserId) $lineUserId = find_user_id_recursive($data['originalDetectIntentRequest'] ?? []);
@@ -96,7 +96,7 @@ if (!$nickname) $missing[] = "ชื่อเล่น";
 if (!$serial)   $missing[] = "หมายเลขเครื่อง";
 if (!$phone)    $missing[] = "เบอร์โทร";
 if (!$device)   $missing[] = "อุปกรณ์";
-if ($issue==='')$missing[] = "ปัญหา";
+if ($issue==='') $missing[] = "ปัญหา";
 if (!$floor)    $missing[] = "เลขห้อง";
 
 if ($missing) {
@@ -108,6 +108,7 @@ if ($missing) {
 /* ===== ฐานข้อมูล ===== */
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 try {
+  // *** 1. แก้ไขข้อมูลเชื่อมต่อฐานข้อมูลของคุณตรงนี้ ***
   $conn = new mysqli("localhost", "techfixuser", "StrongPass!234", "techfix");
   $conn->set_charset('utf8mb4');
 
@@ -158,6 +159,139 @@ try {
   }
 
   $conn->close();
+
+/* ===== สร้างใบแจ้งซ่อมอัตโนมัติ (PDF) ===== */
+
+// *** FIX: ใช้ชื่อไฟล์ที่ปลอดภัย ***
+$safeQueueCode = str_replace('/', '-', $queueCode); 
+$pdfPath = __DIR__ . "/repair_forms/{$safeQueueCode}.pdf";
+if (!is_dir(dirname($pdfPath))) mkdir(dirname($pdfPath), 0777, true);
+
+// *** 2. เรียกใช้ไลบรารี tFPDF ที่ติดตั้งไว้ ***
+require_once(__DIR__ . '/fpdf/fpdf.php'); 
+
+// --- กำหนดค่าเริ่มต้นของใบเสร็จ ---
+$pdf = new tFPDF('P', 'mm', 'A4'); // P=Portrait, mm=millimeters
+$pdf->AddPage();
+$pdf->SetAutoPageBreak(false); 
+
+// *** 3. เพิ่มฟอนต์ THSarabunNew (ที่คุณเพิ่งเพิ่มไฟล์) ***
+$pdf->AddFont('Sarabun','','THSarabunNew.ttf', true);
+$pdf->AddFont('Sarabun','B','THSarabunNew Bold.ttf', true); 
+
+// --- กำหนดขนาดและตำแหน่งของใบเสร็จ ---
+$pageWidth = 210; // A4 width
+$slipWidth = 90;  // ความกว้างใบเสร็จ 90mm
+$slipHeight = 130; // ความสูงใบเสร็จ 130mm
+$startX = ($pageWidth - $slipWidth) / 2; 
+$startY = 30; 
+$padding = 8; 
+$contentX = $startX + $padding; 
+$contentWidth = $slipWidth - ($padding * 2); 
+
+// --- 1. วาดกรอบสี่เหลี่ยม ---
+$pdf->SetDrawColor(0, 84, 166); 
+$pdf->SetLineWidth(0.8);
+$pdf->Rect($startX, $startY, $slipWidth, $slipHeight, 'S'); 
+
+// --- 2. ใส่โลโก้ ---
+$logoPath = __DIR__ . '/image/logo.png'; 
+$pdf->SetY($startY + $padding); 
+if (file_exists($logoPath)) {
+    $imageWidth = 20;
+    $imageX = $startX + (($slipWidth - $imageWidth) / 2); // Center image
+    $pdf->Image($logoPath, $imageX, $pdf->GetY(), $imageWidth);
+    $pdf->Ln($imageWidth + 2); 
+} else {
+    $pdf->Ln(20); 
+}
+
+// --- 3. ใส่หัวกระดาษ (TECHFIX.IT) ---
+$pdf->SetFont('Sarabun','B', 18); // <- ใช้ฟอนต์ Sarabun
+$pdf->SetX($contentX);
+$pdf->Cell($contentWidth, 8, 'TECHFIX.IT', 0, 1, 'C');
+$pdf->SetFont('Sarabun','', 10); // <- ใช้ฟอนต์ Sarabun
+$pdf->SetX($contentX);
+$pdf->Cell($contentWidth, 6, 'COMPUTER SERVICE', 0, 1, 'C');
+$pdf->Ln(8); 
+
+// --- 4. แยกข้อมูลวันที่ / เลขคิว ---
+$datePart = $dateForQueue; 
+$queuePart = 'N/A';
+if (preg_match('/([A-Z])(\d+)$/', $queueCode, $m)) {
+     $queuePart = $m[1] . $m[2]; 
+}
+
+// --- 5. ใส่เนื้อหา (Label + Value) ---
+$lineHeight = 7; 
+$labelWidth = 30; 
+
+// --- ฟังก์ชันช่วยวาด 1 แถว ---
+function drawRow($pdf, $label, $value, $contentX, $labelWidth, $lineHeight) {
+    $pdf->SetFont('Sarabun','B', 12); // <- ใช้ฟอนต์ Sarabun
+    $pdf->SetX($contentX); 
+    $pdf->Cell($labelWidth, $lineHeight, $label . ':', 0, 0);
+    
+    $pdf->SetFont('Sarabun','', 12); // <- ใช้ฟอนต์ Sarabun
+    $currentY = $pdf->GetY();
+    $pdf->SetY($currentY);
+    $pdf->SetX($contentX + $labelWidth); 
+    $pdf->MultiCell($contentWidth - $labelWidth, $lineHeight, $value, 0, 'L');
+}
+
+// --- วาดข้อมูลลง PDF ---
+drawRow($pdf, 'วันที่', $datePart, $contentX, $labelWidth, $lineHeight);
+drawRow($pdf, 'เลขที่ใบซ่อม', $queuePart, $contentX, $labelWidth, $lineHeight);
+drawRow($pdf, 'ผู้แจ้ง', $nickname, $contentX, $labelWidth, $lineHeight);
+drawRow($pdf, 'เบอร์โทร', $phone, $contentX, $labelWidth, $lineHeight);
+drawRow($pdf, 'ห้อง', $floor, $contentX, $labelWidth, $lineHeight);
+drawRow($pdf, 'อุปกรณ์', $device, $contentX, $labelWidth, $lineHeight); 
+drawRow($pdf, 'หมายเลขเครื่อง', $serial, $contentX, $labelWidth, $lineHeight);
+drawRow($pdf, 'ปัญหา', $issue, $contentX, $labelWidth, $lineHeight);
+
+// --- 6. บันทึกไฟล์ PDF ---
+$pdf->Output('F', $pdfPath); 
+
+/* ===== จบส่วนสร้าง PDF ===== */
+
+
+/* ===== ส่งกลับเข้า LINE ===== */
+// *** 4. ใส่ TOKEN และ DOMAIN ของคุณตรงนี้ ***
+$LINE_TOKEN = '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU='; 
+$DOMAIN_URL = 'https://techfix.asia'; // (ต้องเป็น HTTPS)
+
+if ($lineUserId) 
+{
+    $msg = [
+      "to" => $lineUserId,
+      "messages" => [
+        [
+          "type" => "text",
+          "text" => "ใบแจ้งซ่อมของคุณถูกสร้างเรียบร้อยครับ 📄",
+        ],
+        [
+          "type" => "file",
+          "originalContentUrl" => "{$DOMAIN_URL}/repair_forms/{$safeQueueCode}.pdf", 
+          "fileName" => "{$safeQueueCode}.pdf",
+          "fileSize" => filesize($pdfPath)
+        ]
+      ]
+    ];
+    $ch = curl_init("https://api.line.me/v2/bot/message/push");
+    curl_setopt_array($ch, [
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_POST => true,
+      CURLOPT_HTTPHEADER => [
+        "Content-Type: application/json",
+        "Authorization: Bearer $LINE_TOKEN"
+      ],
+      CURLOPT_POSTFIELDS => json_encode($msg, JSON_UNESCAPED_UNICODE)
+    ]);
+    curl_exec($ch);
+    curl_close($ch);
+} 
+/* ===== จบส่วนส่ง LINE ===== */
+
 
 } catch (Throwable $e) {
   error_log('DB Error: ' . $e->getMessage());
