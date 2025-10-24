@@ -279,6 +279,7 @@ $pdf->Output('F', $pdfPath);
 $LINE_TOKEN = '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU='; 
 $DOMAIN_URL = 'https://techfix.asia'; // (ต้องเป็น HTTPS)
 
+// ...
 if ($lineUserId) 
 {
     $msg = [
@@ -289,13 +290,13 @@ if ($lineUserId)
           "text" => "ใบแจ้งซ่อมของคุณถูกสร้างเรียบร้อยครับ 📄",
         ],
         [
-          "type" => "file",
-          "originalContentUrl" => "{$DOMAIN_URL}/repair_forms/{$safeQueueCode}.pdf", 
-          "fileName" => "{$safeQueueCode}.pdf",
-          "fileSize" => filesize($pdfPath)
+          // ‼️‼️ WORKAROUND: เปลี่ยนจาก "file" เป็น "text" ‼️‼️
+          "type" => "text",
+          "text" => "คลิกเพื่อดาวน์โหลดใบแจ้งซ่อม (A4): {$DOMAIN_URL}/repair_forms/{$safeQueueCode}.pdf"
         ]
       ]
     ];
+// ... (ที่เหลือเหมือนเดิม) ...
     $ch = curl_init("https://api.line.me/v2/bot/message/push");
     curl_setopt_array($ch, [
       CURLOPT_RETURNTRANSFER => true,
