@@ -165,199 +165,24 @@ try {
 
 /*
 |--------------------------------------------------------------------------
-| ‼️‼️‼️ เริ่มส่วนสร้าง PDF ‼️‼️‼️
+| ‼️‼️‼️ ลบส่วนสร้าง PDF และ LINE PUSH ออก ‼️‼️‼️
 |--------------------------------------------------------------------------
+|
+| ตามคำขอของผู้ใช้ เราได้ลบส่วนการสร้าง PDF
+| และส่วนการส่ง LINE Push Message (ที่เป็นลิงก์ PDF) ออกทั้งหมด
+| เพื่อป้องกัน Error และเหลือไว้เพียงการตอบกลับด้วยข้อความสรุป
+|
 */
-
-// *** 1. กำหนดค่าพื้นฐาน ***
-$safeQueueCode = str_replace('/', '-', $queueCode); 
-$pdfPath = __DIR__ . "/repair_forms/{$safeQueueCode}.pdf";
-if (!is_dir(dirname($pdfPath))) mkdir(dirname($pdfPath), 0777, true);
-
-// FIX: ระบุ Path ของฟอนต์ให้ชัดเจน
-if (!defined('FPDF_FONTPATH')) {
-    define('FPDF_FONTPATH', __DIR__ . '/fpdf/font/unifont/');
-}
-
-//
-// ‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️
-//
-//          FIX: เปลี่ยนจาก fpdf.php เป็น tfpdf.php
-//          เพื่อให้เรียกใช้คลาส tFPDF ได้ถูกต้อง
-//
-require_once(__DIR__ . '/fpdf/tfpdf.php'); 
-//
-// ‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️‼️
-//
-
-
-// --- 2. สร้าง PDF และเพิ่มฟอนต์ ---
-$pdf = new tFPDF('P', 'mm', 'A4'); // <--- คลาสนี้ต้องการ tfpdf.php
-$pdf->AddPage();
-// การเรียก AddFont ตอนนี้จะไปหาฟอนต์จาก Path ที่เรา define ไว้
-$pdf->AddFont('Sarabun','','THSarabunNew.ttf', true);
-$pdf->AddFont('Sarabun','B','THSarabunNew Bold.ttf', true); 
-
-// --- 3. ตั้งค่าหน้ากระดาษและ Margins ---
-$leftMargin = 25;
-$rightMargin = 25;
-$topMargin = 20;
-$pageWidth = 210;
-$contentWidth = $pageWidth - $leftMargin - $rightMargin; // 160mm
-
-$pdf->SetMargins($leftMargin, $topMargin, $rightMargin); 
-$pdf->SetAutoPageBreak(true, 20); // Margin ล่าง 2cm
-
-// --- 4. ใส่โลโก้และหัวกระดาษ (Header) ---
-$logoPath = __DIR__ . '/image/logo.png'; 
-$headerY = $pdf->GetY(); // เก็บตำแหน่ง Y เริ่มต้น
-
-if (file_exists($logoPath)) {
-    $pdf->Image($logoPath, $leftMargin, $headerY, 25); // กว้าง 25mm
-}
-
-$pdf->SetFont('Sarabun','B', 20);
-$pdf->SetXY($leftMargin, $headerY + 5); 
-$pdf->Cell($contentWidth, 10, 'ใบแจ้งซ่อม (REPAIR FORM)', 0, 1, 'C'); 
-$pdf->SetFont('Sarabun','', 12);
-$pdf->SetX($leftMargin);
-$pdf->Cell($contentWidth, 8, 'TECHFIX.IT COMPUTER SERVICE', 0, 1, 'C');
-
-// --- 5. ข้อมูลใบแจ้งซ่อม (มุมบนขวา) ---
-$infoBoxWidth = 70; 
-$infoBoxX = $pageWidth - $rightMargin - $infoBoxWidth; 
-
-$pdf->SetFont('Sarabun','B', 12);
-$pdf->SetXY($infoBoxX, $headerY); // กลับไป Y บนสุด
-$pdf->Cell($infoBoxWidth, 8, 'เลขที่ใบซ่อม (Queue No.):', 0, 1, 'L');
-$pdf->SetFont('Sarabun','', 12);
-$pdf->SetX($infoBoxX + 5); 
-$pdf->Cell($infoBoxWidth - 5, 8, $queueCode, 0, 1, 'L');
-
-$pdf->SetFont('Sarabun','B', 12);
-$pdf->SetX($infoBoxX);
-$pdf->Cell($infoBoxWidth, 8, 'วันที่ (Date):', 0, 1, 'L');
-$pdf->SetFont('Sarabun','', 12);
-$pdf->SetX($infoBoxX + 5); 
-$pdf->Cell($infoBoxWidth - 5, 8, $dateForQueue, 0, 1, 'L');
-
-// --- 6. เส้นคั่น และส่วนเนื้อหา ---
-$pdf->SetY($headerY + 40); // เลื่อน Y ลงมาให้พ้นส่วนหัว
-$pdf->SetDrawColor(0, 84, 166); 
-$pdf->SetLineWidth(0.5);
-$pdf->Line($leftMargin, $pdf->GetY(), $pageWidth - $rightMargin, $pdf->GetY());
-$pdf->Ln(8); // เว้นบรรทัด
-
-// --- 7. ฟังก์ชันช่วยวาดแถวข้อมูล (แบบใหม่) ---
-function drawDataRow($pdf, $label, $value, $contentWidth) {
-    $lineHeight = 8;    
-    $labelWidth = 40;   
-    $valueWidth = $contentWidth - $labelWidth - 5; 
-    $startX = $pdf->GetX();
-    $startY = $pdf->GetY();
-
-    $pdf->SetFont('Sarabun','B', 12);
-    $pdf->MultiCell($labelWidth, $lineHeight, $label . ' :', 0, 'L');
-    $labelEndY = $pdf->GetY();
-
-    $pdf->SetFont('Sarabun','', 12);
-    $pdf->SetXY($startX + $labelWidth + 5, $startY); 
-    $pdf->MultiCell($valueWidth, $lineHeight, $value, 0, 'L');
-    $valueEndY = $pdf->GetY();
-
-    $pdf->SetY(max($labelEndY, $valueEndY));
-    $pdf->Ln(2); 
-}
-
-// --- 8. วาดข้อมูลลง PDF ---
-drawDataRow($pdf, 'ผู้แจ้ง', $nickname, $contentWidth);
-drawDataRow($pdf, 'เบอร์โทร', $phone, $contentWidth);
-drawDataRow($pdf, 'ห้อง', $floor, $contentWidth);
-$pdf->Ln(5); 
-drawDataRow($pdf, 'อุปกรณ์', $device, $contentWidth); 
-drawDataRow($pdf, 'หมายเลขเครื่อง', $serial, $contentWidth);
-$pdf->Ln(5); 
-
-$pdf->SetFont('Sarabun','B', 12);
-$pdf->Cell($contentWidth, 8, 'ปัญหา/อาการที่พบ :', 0, 1, 'L');
-$pdf->SetFont('Sarabun','', 12);
-$pdf->SetDrawColor(200, 200, 200); 
-$pdf->MultiCell($contentWidth, 8, $issue, 1, 'L'); 
-
-// --- 9. ส่วนท้าย (Footer) ---
-$pdf->SetY(-30); // 30mm จากด้านล่าง
-$pdf->SetFont('Sarabun','', 10);
-$pdf->SetDrawColor(0, 84, 166);
-$pdf->SetLineWidth(0.5);
-$pdf->Line($leftMargin, $pdf->GetY(), $pageWidth - $rightMargin, $pdf->GetY());
-$pdf->Ln(5);
-$pdf->Cell($contentWidth, 6, 'ขอบคุณที่ใช้บริการ TECHFIX.IT', 0, 1, 'C');
-
-// --- 10. บันทึกไฟล์ PDF ---
-$pdf->Output('F', $pdfPath); 
-
-/*
-|--------------------------------------------------------------------------
-| ‼️‼️‼️ จบส่วนสร้าง PDF ‼️‼️‼️
-|--------------------------------------------------------------------------
-*/
-
-/* ===== จบส่วนสร้าง PDF ===== */
-
-
-/* ===== ส่งกลับเข้า LINE ===== */
-$LINE_TOKEN = '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU='; 
-$DOMAIN_URL = 'https://techfix.asia'; 
-
-if ($lineUserId) 
-{
-    $msg = [
-      "to" => $lineUserId,
-      "messages" => [
-        [
-          "type" => "text",
-          "text" => "ใบแจ้งซ่อมของคุณถูกสร้างเรียบร้อยครับ 📄",
-        ],
-        [
-          "type" => "text",
-          "text" => "คลิกเพื่อดาวน์โหลดใบแจ้งซ่อม (A4): {$DOMAIN_URL}/repair_forms/{$safeQueueCode}.pdf"
-        ]
-      ]
-    ];
-
-    $ch = curl_init("https://api.line.me/v2/bot/message/push");
-    curl_setopt_array($ch, [
-      CURLOPT_RETURNTRANSFER => true,
-      CURLOPT_POST => true,
-      CURLOPT_HTTPHEADER => [
-        "Content-Type: application/json",
-        "Authorization: " . "Bearer " . $LINE_TOKEN
-      ],
-      CURLOPT_POSTFIELDS => json_encode($msg, JSON_UNESCAPED_UNICODE)
-    ]);
-    
-    $curl_response = curl_exec($ch);
-    $curl_error = curl_error($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE); 
-    curl_close($ch);
-
-    if ($curl_error) {
-        error_log('LINE Push cURL Error: ' . $curl_error);
-    } elseif ($http_code != 200 && $http_code != 202) {
-        error_log('LINE Push API Error: HTTP Code ' . $http_code . ' | Response: ' . $curl_response);
-    }
-} 
-/* ===== จบส่วนส่ง LINE ===== */
 
 
 } catch (Throwable $e) {
-  // บล็อกนี้จะทำงาน "เฉพาะ" เมื่อเกิดปัญหาร้ายแรงจริงๆ เท่านั้น
-  error_log('Fatal Error (DB or PDF): ' . $e->getMessage() . ' on line ' . $e->getLine());
+  // บล็อกนี้จะทำงาน "เฉพาะ" เมื่อเกิดปัญหาที่ "ฐานข้อมูล" เท่านั้น
+  error_log('DB Error: ' . $e->getMessage());
   send_json_and_exit(["fulfillmentText" => "ขออภัย ระบบบันทึกข้อมูลไม่สำเร็จ"]);
 }
 
 /* ===== ตอบกลับ ===== */
-// สคริปต์จะมาถึงตรงนี้ "ก็ต่อเมื่อ" ทุกอย่าง (DB และ PDF) สำเร็จแล้ว
+// สคริปต์จะมาถึงตรงนี้ "ก็ต่อเมื่อ" บันทึกฐานข้อมูลสำเร็จ
 $responseText =
   "รับการแจ้งซ่อมครับ คุณ $nickname\n".
   "📌 คิวของคุณ: $queueCode\n".
