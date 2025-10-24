@@ -3,10 +3,10 @@ declare(strict_types=1);
 date_default_timezone_set('Asia/Bangkok');
 
 /* ===== Error handling: ห้าม echo error ออกจอ ให้ log ลงไฟล์แทน ===== */
-ini_set('display_errors', '0');                      // สำคัญ: ปิดการโชว์ error มิฉะนั้น JSON จะพัง
+ini_set('display_errors', '0');                  // สำคัญ: ปิดการโชว์ error มิฉะนั้น JSON จะพัง
 ini_set('log_errors', '1');
-ini_set('error_log', __DIR__ . '/php_error.log');    // ดูด้วย: tail -n 50 php_error.log
-ob_start();                                           // กัน output หลุดมาก่อน JSON
+ini_set('error_log', __DIR__ . '/php_error.log');
+ob_start();                                      // กัน output หลุดมาก่อน JSON
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -65,9 +65,9 @@ if ($userMessage !== '' && preg_match('/สวัสดี|เริ่มให
 /* ===== ดึง LINE userId ===== */
 $lineUserId = null;
 $odi = $data['originalDetectIntentRequest']['payload'] ?? [];
-if (!$lineUserId && !empty($odi['data']['source']['userId']))            $lineUserId = $odi['data']['source']['userId'];
+if (!$lineUserId && !empty($odi['data']['source']['userId']))        $lineUserId = $odi['data']['source']['userId'];
 if (!$lineUserId && !empty($odi['data']['events'][0]['source']['userId'])) $lineUserId = $odi['data']['events'][0]['source']['userId'];
-if (!$lineUserId && !empty($odi['source']['userId']))                     $lineUserId = $odi['source']['userId'];
+if (!$lineUserId && !empty($odi['source']['userId']))                 $lineUserId = $odi['source']['userId'];
 if (!$lineUserId && !empty($data['originalDetectIntentRequest']['source']['userId']))
   $lineUserId = $data['originalDetectIntentRequest']['source']['userId'];
 if (!$lineUserId) $lineUserId = find_user_id_recursive($data['originalDetectIntentRequest'] ?? []);
@@ -96,7 +96,7 @@ if (!$nickname) $missing[] = "ชื่อเล่น";
 if (!$serial)   $missing[] = "หมายเลขเครื่อง";
 if (!$phone)    $missing[] = "เบอร์โทร";
 if (!$device)   $missing[] = "อุปกรณ์";
-if ($issue==='')$missing[] = "ปัญหา";
+if ($issue==='') $missing[] = "ปัญหา";
 if (!$floor)    $missing[] = "เลขห้อง";
 
 if ($missing) {
@@ -194,8 +194,8 @@ $pdf->SetDrawColor(0, 84, 166); // สีน้ำเงินเข้ม (RGB)
 $pdf->SetLineWidth(0.8);
 $pdf->Rect($startX, $startY, $slipWidth, $slipHeight, 'S'); // 'S' = วาดเส้น
 
-// --- 2. ใส่โลโก้ (ต้องมีไฟล์ /image/logo.png) ---
-$logoPath = __DIR__ . '/image/logo.png'; // *** แก้ชื่อไฟล์ตรงนี้ถ้าไม่ตรง ***
+// --- 2. ใส่โลโก้ (ไฟล์ logo.png ที่คุณแก้แล้ว) ---
+$logoPath = __DIR__ . '/image/logo.png'; // <- ถูกต้องแล้ว
 $pdf->SetY($startY + $padding); // เลื่อน Y ลงมา
 if (file_exists($logoPath)) {
     $imageWidth = 20;
@@ -234,7 +234,6 @@ function drawRow($pdf, $label, $value, $contentX, $labelWidth, $lineHeight) {
     
     $pdf->SetFont('Sarabun','', 12);
     // ใช้ MultiCell เผื่อข้อความยาว (เช่น ปัญหา)
-    // เลื่อน Y กลับไปที่เดิมก่อน
     $currentY = $pdf->GetY();
     $pdf->SetY($currentY);
     $pdf->SetX($contentX + $labelWidth); // เลื่อน X
@@ -247,7 +246,7 @@ drawRow($pdf, 'เลขที่ใบซ่อม', $queuePart, $contentX, $la
 drawRow($pdf, 'ผู้แจ้ง', $nickname, $contentX, $labelWidth, $lineHeight);
 drawRow($pdf, 'เบอร์โทร', $phone, $contentX, $labelWidth, $lineHeight);
 drawRow($pdf, 'ห้อง', $floor, $contentX, $labelWidth, $lineHeight);
-drawRow($pdf, 'อุปกรณ์', $device, $contentX, $labelWidth, $lineHeight); // (ผมเพิ่ม "อุปกรณ์" ให้นะครับ)
+drawRow($pdf, 'อุปกรณ์', $device, $contentX, $labelWidth, $lineHeight); 
 drawRow($pdf, 'หมายเลขเครื่อง', $serial, $contentX, $labelWidth, $lineHeight);
 drawRow($pdf, 'ปัญหา', $issue, $contentX, $labelWidth, $lineHeight);
 
@@ -255,6 +254,50 @@ drawRow($pdf, 'ปัญหา', $issue, $contentX, $labelWidth, $lineHeight);
 $pdf->Output('F', $pdfPath); 
 
 /* ===== จบส่วนสร้าง PDF ===== */
+
+
+//
+// ‼️‼️ นี่คือส่วนที่ผมเพิ่มกลับเข้ามา ‼️‼️
+//
+/* ===== ส่งกลับเข้า LINE ===== */
+$LINE_TOKEN = '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU=';  // <- ใส่ token ที่ใช้ใน Dialogflow
+
+// *** เพิ่มเงื่อนไขตรวจสอบ ***
+if ($lineUserId && $LINE_TOKEN !== '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU=') 
+{
+    $msg = [
+      "to" => $lineUserId,
+      "messages" => [
+        [
+          "type" => "text",
+          "text" => "ใบแจ้งซ่อมของคุณถูกสร้างเรียบร้อยครับ 📄",
+        ],
+        [
+          "type" => "file",
+          "originalContentUrl" => "https://techfix.asia/repair_forms/{$safeQueueCode}.pdf", // <- ใช้ $safeQueueCode
+          "fileName" => "{$safeQueueCode}.pdf", // <- ใช้ $safeQueueCode
+          "fileSize" => filesize($pdfPath)
+        ]
+      ]
+    ];
+    $ch = curl_init("https://api.line.me/v2/bot/message/push");
+    curl_setopt_array($ch, [
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_POST => true,
+      CURLOPT_HTTPHEADER => [
+        "Content-Type: application/json",
+        "Authorization: Bearer $LINE_TOKEN"
+      ],
+      CURLOPT_POSTFIELDS => json_encode($msg, JSON_UNESCAPED_UNICODE)
+    ]);
+    curl_exec($ch);
+    curl_close($ch);
+} 
+/* ===== จบส่วนส่ง LINE ===== */
+//
+// ‼️‼️ สิ้นสุดส่วนที่เพิ่ม ‼️‼️
+//
+
 
 } catch (Throwable $e) {
   error_log('DB Error: ' . $e->getMessage());
