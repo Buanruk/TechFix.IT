@@ -238,7 +238,7 @@ function drawRow($pdf, $label, $value, $contentX, $contentWidth, $labelWidth, $l
     $pdf->SetFont('Sarabun','B', 12);
     $pdf->SetXY($contentX, $startY); // กำหนดตำแหน่ง
     $pdf->MultiCell($labelWidth, $lineHeight, $label . ':', 0, 'L');
-    
+
     // เก็บตำแหน่ง Y สุดท้าย
     $labelEndY = $pdf->GetY();
 
@@ -246,7 +246,7 @@ function drawRow($pdf, $label, $value, $contentX, $contentWidth, $labelWidth, $l
     $pdf->SetFont('Sarabun','', 12);
     $pdf->SetXY($contentX + $labelWidth, $startY); // กำหนดตำแหน่ง (กลับไปที่ Y เริ่มต้น)
     $pdf->MultiCell($contentWidth - $labelWidth, $lineHeight, $value, 0, 'L');
-    
+
     // เก็บตำแหน่ง Y สุดท้าย
     $valueEndY = $pdf->GetY();
 
@@ -306,7 +306,7 @@ if ($lineUserId)
       ],
       CURLOPT_POSTFIELDS => json_encode($msg, JSON_UNESCAPED_UNICODE)
     ]);
-    
+
     // *** 5. เพิ่มโค้ดดักจับ Error ***
     $curl_response = curl_exec($ch);
     $curl_error = curl_error($ch);
