@@ -226,17 +226,29 @@ if (preg_match('/([A-Z])(\d+)$/', $queueCode, $m)) {
 $lineHeight = 7; 
 $labelWidth = 30; 
 
-// --- ฟังก์ชันช่วยวาด 1 แถว ---
+// --- ฟังก์ชันช่วยวาด 1 แถว (เวอร์ชันแก้ไขตัวอักษรเละ) ---
 function drawRow($pdf, $label, $value, $contentX, $labelWidth, $lineHeight) {
-    $pdf->SetFont('Sarabun','B', 12); // <- ใช้ฟอนต์ Sarabun
-    $pdf->SetX($contentX); 
-    $pdf->Cell($labelWidth, $lineHeight, $label . ':', 0, 0);
+    // เก็บตำแหน่ง Y เริ่มต้นของแถวนี้
+    $startY = $pdf->GetY();
+
+    // --- วาด Label (หัวข้อ) ---
+    $pdf->SetFont('Sarabun','B', 12);
+    $pdf->SetXY($contentX, $startY); // กำหนดตำแหน่ง
+    $pdf->MultiCell($labelWidth, $lineHeight, $label . ':', 0, 'L');
     
-    $pdf->SetFont('Sarabun','', 12); // <- ใช้ฟอนต์ Sarabun
-    $currentY = $pdf->GetY();
-    $pdf->SetY($currentY);
-    $pdf->SetX($contentX + $labelWidth); 
+    // เก็บตำแหน่ง Y สุดท้าย เผื่อหัวข้อมันยาวขึ้น 2 บรรทัด (ซึ่งไม่น่าเกิด)
+    $labelEndY = $pdf->GetY();
+
+    // --- วาด Value (ข้อมูล) ---
+    $pdf->SetFont('Sarabun','', 12);
+    $pdf->SetXY($contentX + $labelWidth, $startY); // กำหนดตำแหน่ง (กลับไปที่ Y เริ่มต้น)
     $pdf->MultiCell($contentWidth - $labelWidth, $lineHeight, $value, 0, 'L');
+    
+    // เก็บตำแหน่ง Y สุดท้าย เผื่อข้อมูล (เช่น ปัญหา) มันยาวขึ้น 2 บรรทัด
+    $valueEndY = $pdf->GetY();
+
+    // เลื่อนตำแหน่ง Y ของ PDF ไปรอแถวถัดไป โดยอิงจากแถวที่ "สูงที่สุด"
+    $pdf->SetY(max($labelEndY, $valueEndY));
 }
 
 // --- วาดข้อมูลลง PDF ---
@@ -256,7 +268,7 @@ $pdf->Output('F', $pdfPath);
 
 
 /* ===== ส่งกลับเข้า LINE ===== */
-// *** 4. ใส่ TOKEN และ DOMAIN ของคุณตรงนี้ ***
+// (ผมใช้ Token ของคุณที่ใส่มาครั้งที่แล้ว ถ้าเปลี่ยนต้องแก้ตรงนี้)
 $LINE_TOKEN = '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU='; 
 $DOMAIN_URL = 'https://techfix.asia'; // (ต้องเป็น HTTPS)
 
@@ -287,8 +299,17 @@ if ($lineUserId)
       ],
       CURLOPT_POSTFIELDS => json_encode($msg, JSON_UNESCAPED_UNICODE)
     ]);
-    curl_exec($ch);
+    
+    // *** เพิ่มโค้ดดักจับ Error ***
+    $curl_response = curl_exec($ch);
+    $curl_error = curl_error($ch);
     curl_close($ch);
+
+    if ($curl_error) {
+        // ถ้า curl ล้มเหลว ให้บันทึก Error ลง log
+        error_log('LINE Push Error: ' . $curl_error);
+    }
+    // *** จบส่วนดักจับ Error ***
 } 
 /* ===== จบส่วนส่ง LINE ===== */
 
