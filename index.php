@@ -438,7 +438,7 @@ function t($key) {
   </footer>
 
   <div id="ai-chat-bubble">
-      🤖 AI ช่วยวิเคราะห์ปัญหา
+      TechFix AI ลองแก้ปัญหาด้วยตัวเอง
   </div>
 
   <div id="ai-chat-window">
@@ -450,7 +450,7 @@ function t($key) {
       
       <div id="ai-chat-body">
           <div id="ai-response">
-              <strong>AI TechFix:</strong> สวัสดีครับ! กรุณาอธิบายอาการเสียของอุปกรณ์ (เช่น "โน้ตบุ๊กเปิดไม่ติด")
+              <strong>AI TechFix:</strong> TechFix.IT สวัสดีครับอธิบายปัญหาของอุปกรณ์ (เช่น "โน้ตบุ๊กเปิดไม่ติด")
           </div>
           <p id="loading" style="display: none;">AI กำลังพิมพ์...</p>
       </div>
@@ -588,7 +588,7 @@ handleStickyFade();
           loading.style.display = 'none';
           problemInput.disabled = false;
           problemInput.focus();
-          chatBody.scrollTop = chatBody.scrollHeight; // เลื่อนลงล่างสุดอีกครั้ง
+          chatBody.scrollTop = chatBody.scrollHeight; 
       }
   });
   </script>
