@@ -24,58 +24,81 @@ $allowed = ['new','in_progress','done'];
 
 if ($id > 0 && in_array($status, $allowed, true)) {
 
-  // อัปเดตสถานะ
+  // 1. อัปเดตสถานะ (ทำก่อนเสมอ)
   $stmt = $conn->prepare("UPDATE device_reports SET status = ? WHERE id = ?");
   $stmt->bind_param("si", $status, $id);
   $stmt->execute();
   $stmt->close();
 
-  // ถ้าเปลี่ยนเป็น done → ดึงข้อมูลแล้ว push LINE
-  if ($status === 'done') {
-    $q = $conn->prepare("SELECT username, device_type, serial_number, floor, issue_description, 
-                     queue_number, line_user_id
-                     FROM device_reports WHERE id = ?");
+  $msg = null; // ตัวแปรเก็บข้อความที่จะส่ง
+  $line_user_id = null; // ตัวแปรเก็บ ID ผู้ใช้
+
+  // 2. ถ้าสถานะเป็น "กำลังทำ" หรือ "เสร็จแล้ว" ให้เตรียมส่ง LINE
+  if ($status === 'in_progress' || $status === 'done') {
+
+    // ดึงข้อมูลงานซ่อม (รวมถึง line_user_id และชื่อช่าง)
+    // *** แก้ 'technician_name' ถ้าชื่อคอลัมน์ของคุณไม่ตรง ***
+    $q = $conn->prepare("SELECT username, device_type, serial_number, floor, issue_description,
+                         queue_number, line_user_id, technician_name
+                         FROM device_reports WHERE id = ?");
     $q->bind_param("i", $id);
     $q->execute();
     $job = $q->get_result()->fetch_assoc();
     $q->close();
 
-    if (!empty($job['line_user_id'])) {
-      $msg = "แจ้งเตือนจาก techfix.asia\n"
-           . "งานซ่อมคิว: " . ($job['queue_number'] ?? '-') . "\n"
-           . "สถานะ: ✅ ซ่อมเสร็จแล้ว\n"
-           . "อุปกรณ์: {$job['device_type']}\n"
-           . "หมายเลขเครื่อง: {$job['serial_number']}\n"
-           . "ชั้น: {$job['floor']}\n"
-           . "ปัญหา: {$job['issue_description']}";
-
-      // === ส่ง LINE Push (สำคัญ: header ต้องเป็นสตริงแบบนี้) ===
-      $url = 'https://api.line.me/v2/bot/message/push';
-      $headers = [
-        'Content-Type: application/json',
-        'Authorization: Bearer ' . $LINE_CHANNEL_ACCESS_TOKEN,
-      ];
-      $payload = json_encode([
-        'to' => $job['line_user_id'],
-        'messages' => [[ 'type' => 'text', 'text' => $msg ]]
-      ], JSON_UNESCAPED_UNICODE);
-
-      $ch = curl_init($url);
-      curl_setopt($ch, CURLOPT_POST, true);
-      curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);     // <-- ห้ามแปลงเป็น key:value ด้วย array_map เด็ดขาด
-      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-      curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-      curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-      $res  = curl_exec($ch);
-      $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-      $err  = curl_error($ch);
-      curl_close($ch);
-
-      // Log ตรวจสอบผล push
-      @file_put_contents(__DIR__ . "/line_push_log.txt",
-        date("Y-m-d H:i:s")." id=$id http=$http err=$err res=$res\n", FILE_APPEND);
+    if (!empty($job) && !empty($job['line_user_id'])) {
+      $line_user_id = $job['line_user_id'];
+      $queue = $job['queue_number'] ?? '-';
+      
+      // ‼️‼️‼️ ส่วนที่เพิ่มเข้ามา ‼️‼️‼️
+      if ($status === 'in_progress') {
+        $tech_name = $job['technician_name'] ?? 'ไม่ระบุ';
+        $msg = "คิว {$queue} ของคุณ\n"
+             . "สถานะ: 🔧 กำลังดำเนินการซ่อม\n"
+             . "รับการซ่อมโดยช่าง: {$tech_name}";
+      
+      // ส่วน "เสร็จแล้ว" ที่คุณมีอยู่แล้ว
+      } elseif ($status === 'done') {
+        $msg = "แจ้งเตือนจาก techfix.asia\n"
+             . "งานซ่อมคิว: {$queue}\n"
+             . "สถานะ: ✅ ซ่อมเสร็จแล้ว\n"
+             . "อุปกรณ์: {$job['device_type']}\n"
+             . "หมายเลขเครื่อง: {$job['serial_number']}\n"
+             . "ชั้น: {$job['floor']}\n"
+             . "ปัญหา: {$job['issue_description']}";
+      }
     }
+  }
+
+  // 3. ถ้มี $msg และ $line_user_id ที่ต้องส่ง ให้ส่ง Push
+  if ($msg && $line_user_id) {
+    
+    // === ส่ง LINE Push (สำคัญ: header ต้องเป็นสตริงแบบนี้) ===
+    $url = 'https://api.line.me/v2/bot/message/push';
+    $headers = [
+      'Content-Type: application/json',
+      'Authorization: Bearer ' . $LINE_CHANNEL_ACCESS_TOKEN,
+    ];
+    $payload = json_encode([
+      'to' => $line_user_id,
+      'messages' => [[ 'type' => 'text', 'text' => $msg ]]
+    ], JSON_UNESCAPED_UNICODE);
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    $res  = curl_exec($ch);
+    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err  = curl_error($ch);
+    curl_close($ch);
+
+    // Log ตรวจสอบผล push
+    @file_put_contents(__DIR__ . "/line_push_log.txt",
+      date("Y-m-d H:i:s")." id=$id status=$status http=$http err=$err res=$res\n", FILE_APPEND);
   }
 }
 
@@ -85,3 +108,4 @@ $conn->close();
 $back = $_SERVER['HTTP_REFERER'] ?? '/';
 header("Location: {$back}");
 exit;
+?>
