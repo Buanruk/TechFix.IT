@@ -34,8 +34,12 @@ function t($key) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TechFix.it</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <link 
+  rel="stylesheet" 
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" 
+  crossorigin="anonymous" 
+  referrerpolicy="no-referrer" 
+/>
   <style>
     :root{
       --bg:#0E111B; --bg-soft:#111627; --card:#151B27; --brand:#4F9DFF; --accent:#FDB913;
@@ -47,7 +51,8 @@ function t($key) {
       margin:0; font-family:'Montserrat',sans-serif; color:var(--text); background:var(--bg);
       -webkit-font-smoothing:antialiased; overflow-x:hidden;
     }
-    /* ... (CSS ทั้งหมดของคุณเหมือนเดิม) ... */
+
+    /* ===== NAVBAR ===== */
     .navbar{
       position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
       padding:14px clamp(16px,4vw,40px);background:rgba(14,17,27,.6);backdrop-filter:blur(10px);
@@ -56,6 +61,8 @@ function t($key) {
     .logo{font-weight:800;letter-spacing:.3px;display:flex;align-items:center;gap:10px}
     .logo .dot{width:10px;height:10px;background:var(--accent);border-radius:50%}
     .nav-actions{display:flex;align-items:center;gap:10px}
+
+    /* ปุ่มหลัก */
     .btn{
       display:inline-flex;align-items:center;justify-content:center;gap:10px;
       padding:12px 16px;border-radius:14px;text-decoration:none;
@@ -68,12 +75,17 @@ function t($key) {
     .btn.outline{background:transparent;border:1px solid rgba(230,237,247,.18);box-shadow:none}
     .btn.ghost{background:rgba(79,157,255,.12);border:1px solid rgba(79,157,255,.35);color:#CFE4FF}
     .btn.ghost:hover{background:rgba(79,157,255,.18);border-color:rgba(79,157,255,.55)}
+
+    /* ปุ่มแอดมินบนแถบบน */
     .btn-admin{
       background:linear-gradient(180deg,#5ea4ff,#3d86e7);
       border:1px solid rgba(255,255,255,.14);
       padding:10px 16px;border-radius:999px;
     }
+
     .wrap{width:min(100%,var(--maxw));margin:0 auto;padding:0 clamp(16px,4vw,40px)}
+
+    /* ===== HERO (Parallax Layers) ===== */
     .hero{position:relative;min-height:86vh;display:grid;place-items:center;overflow:hidden}
     .hero-bg{
       position:absolute;inset:0;background:
@@ -85,24 +97,33 @@ function t($key) {
     .layer{position:absolute;inset:auto;will-change:transform;filter:drop-shadow(0 10px 25px rgba(0,0,0,.25))}
     .floating{animation:float 6s ease-in-out infinite}
     @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
     .hero-inner{position:relative;z-index:1;display:grid;gap:14px;text-align:center}
     h1{margin:0;font-size:clamp(28px,5.2vw,56px);line-height:1.12;font-weight:800}
     h1 span{color:var(--brand);text-shadow:0 6px 24px rgba(79,157,255,.3)}
     .lead{color:var(--muted);font-size:clamp(14px,1.3vw,18px)}
     .hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px}
     .hero-cta .btn{min-width:180px}
+
+    /* QR badge */
     .qr-badge{position:absolute;right:clamp(10px,4vw,40px);bottom:clamp(10px,3vw,40px);z-index:2}
     .qr-card{
       display:flex;flex-direction:column;align-items:center;gap:10px;background:linear-gradient(160deg,#141B2B,#0F1522);
       border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)
     }
+
+    /* ===== SCROLL STORY ===== */
     .story{position:relative}
     .frame{position:sticky;top:0;min-height:100vh;display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:center}
     .frame+.spacer{height:50vh}
     .glass{background:linear-gradient(145deg,#182033,#121826);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:26px}
     .ph{width:100%;aspect-ratio:4/3;border-radius:16px;background:#0f172a;display:grid;place-items:center;color:#94A3B8;border:1px solid rgba(255,255,255,.06)}
+
+    /* Reveal anim */
     .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease, transform .7s ease}
     .reveal.in{opacity:1;transform:none}
+
+    /* ===== Masonry showcase ===== */
     .grid-title{margin:40px 0 12px;font-size:22px;font-weight:800;color:#CFE4FF}
     .masonry{columns:1;column-gap:14px}
     @media(min-width:600px){.masonry{columns:2}}
@@ -110,7 +131,10 @@ function t($key) {
     .card{break-inside:avoid;margin:0 0 14px;background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
     .ph-img{width:100%;display:block;aspect-ratio:4/3;background:linear-gradient(180deg,#1C2436,#121827);display:grid;place-items:center;color:#94A3B8;font-size:12px}
     .card-body{padding:14px 16px 16px}
+
     .footer{margin-top:50px;padding:24px;text-align:center;color:var(--muted);border-top:1px solid rgba(255,255,255,.06);background:linear-gradient(180deg,rgba(20,26,40,.3),rgba(14,17,27,.6))}
+
+    /* Mobile adjustments */
     @media(max-width:980px){
       .frame{grid-template-columns:1fr}
       .qr-badge{position:static;margin-top:16px;display:flex;justify-content:center}
@@ -123,35 +147,46 @@ function t($key) {
     @media(max-width:400px){
       .hero-cta .btn{flex-basis:100%}
     }
+
+    /* Respect reduced motion */
     @media (prefers-reduced-motion: reduce){
       .layer,.floating{animation:none;transform:none !important}
       .reveal{transition:none}
     }
+    
+    /* (โค้ด CSS ของ Chat Widget เดิมถูกลบออกจากส่วนนี้แล้ว) */
+    
   </style>
 </head>
 <body>
   <header class="navbar" role="navigation" aria-label="เมนูหลัก">
     <div class="logo"><span class="dot"></span> TechFix.it</div>
+
     <nav class="nav-actions">
     <a href="technician_login.php" class="btn btn-admin outline" aria-label="เข้าสู่ระบบช่างเทคนิค">
         <i class="fas fa-wrench" aria-hidden="true"></i>
         TECHNICIAN
     </a>
+
     <a href="admin_login.php" class="btn btn-admin" aria-label="เข้าสู่ระบบแอดมิน">
         <i class="fas fa-user-shield" aria-hidden="true"></i>
         ADMIN
     </a>
-    </nav>
+    
+</nav>
   </header>
 
   <section class="hero" aria-label="หน้าแรก">
     <div class="hero-bg"></div>
+
     <img class="layer" data-parallax data-speed="-0.25" src="image/logo2.png" alt="" style="top:10%;left:-4%;width:28vw;max-width:360px;opacity:.35" />
     <img class="layer floating" data-parallax data-speed="0.12" src="image/logo2.png" alt="" style="top:18%;right:-6%;width:30vw;max-width:400px;opacity:.28" />
     <img class="layer" data-parallax data-speed="-0.15" alt="" style="bottom:-6%;left:8%;width:22vw;max-width:300px;opacity:.22" />
+
     <div class="hero-inner wrap">
       <h1 class="reveal">บริการซ่อมคอมพิวเตอร์ <span>TechFix.it</span></h1>
       <p class="lead reveal" style="transition-delay:.08s">แจ้งซ่อมผ่าน LINE Bot • ติดตามสถานะแบบเรียลไทม์ • รองรับมือถือเต็มรูปแบบ</p>
+
       <div class="hero-cta reveal" style="transition-delay:.15s">
         <a href="repair_detail.php" class="btn ghost" aria-label="คิวแจ้งซ่อม">
           <i class="fas fa-clipboard-list" aria-hidden="true"></i> คิวแจ้งซ่อม
@@ -161,6 +196,7 @@ function t($key) {
         </a>
       </div>
     </div>
+
     <aside class="qr-badge" aria-label="สแกนเพิ่มเพื่อน LINE">
       <div class="qr-card reveal" style="transition-delay:.25s">
         <img src="image/qr.jpg" alt="QR LINE" style="width:120px;aspect-ratio:1/1;border-radius:10px;display:block">
@@ -170,6 +206,7 @@ function t($key) {
   </section>
 
 <main id="story" class="wrap story" aria-label="ลำดับคุณสมบัติ">
+
     <section class="frame">
         <div class="glass reveal">
             <h2 style="margin:0 0 8px;font-size:clamp(22px,3.5vw,34px)"><span style="color:var(--brand)">แจ้งซ่อมง่ายๆ</span> ไม่กี่ขั้นตอน</h2>
@@ -184,6 +221,7 @@ function t($key) {
             <img src="image/how2.png" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
         </div>
     </section>
+
     <section class="frame">
         <div class="reveal">
             <img src="image/ai.png" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
@@ -198,6 +236,7 @@ function t($key) {
             </ul>
         </div>
     </section>
+
     <section class="frame">
         <div class="glass reveal">
             <h2 style="margin:0 0 8px;font-size:clamp(22px,3.5vw,34px)">พร้อมใช้งานทุก <span style="color:var(--brand)">อุปกรณ์</span></h2>
@@ -213,11 +252,13 @@ function t($key) {
             <img src="image/device.png" alt="หน้าจอตัวอย่าง" style="width:100%;height:auto;border-radius:16px">
         </div>
     </section>
+
 </main>
 
   <section class="wrap">
   <h3 class="grid-title">ตัวอย่างหมวดอุปกรณ์ที่รับซ่อม</h3>
   <div class="masonry">
+
     <article class="card reveal">
       <div class="ph-img" data-parallax data-speed="0.06" style="aspect-ratio:4/3; overflow:hidden; border-radius:16px;">
         <img 
@@ -229,6 +270,7 @@ function t($key) {
       </div>
       <div class="card-body" style="font-weight:600; text-align:center;">ปัญหาด้านคอมพิวเตอร์</div>
     </article>
+
     <article class="card reveal">
       <div class="ph-img" data-parallax data-speed="-0.04" style="aspect-ratio:4/5; overflow:hidden; border-radius:16px;">
         <img 
@@ -240,6 +282,7 @@ function t($key) {
       </div>
       <div class="card-body" style="font-weight:600; text-align:center;">ปัญหาด้านโน๊ตบุ๊ค</div>
     </article>
+
     <article class="card reveal">
       <div class="ph-img" data-parallax data-speed="0.08" style="aspect-ratio:4/3; overflow:hidden; border-radius:16px;">
         <img 
@@ -251,6 +294,7 @@ function t($key) {
       </div>
       <div class="card-body" style="font-weight:600; text-align:center;">ปัญหาด้านปริ้นเตอร์</div>
     </article>
+
     <article class="card reveal">
       <div class="ph-img" data-parallax data-speed="-0.05" style="aspect-ratio:4/3; overflow:hidden; border-radius:16px;">
         <img 
@@ -262,6 +306,7 @@ function t($key) {
       </div>
       <div class="card-body" style="font-weight:600; text-align:center;">อุปกรณ์เครือข่าย</div>
     </article>
+
   </div>
 </section>
 
@@ -341,17 +386,29 @@ window.addEventListener('scroll', handleStickyFade, { passive: true });
 handleStickyFade();
   </script>
 
-  <script 
-    src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
-    data-workflow-id="wf_6903b9ce55808190a1b43e06848c640900ce1c193bb32c48"
-    data-key="domain_pk_6903bedada08819093c4448e52217fcf07584f90ccd14ee2"
-    data-title="TechFix Assistant"
-    data-subtitle="พร้อมช่วยเหลือค้นหาอาการเบื้องต้น"
-    data-avatar="image/logo2.png"
-    data-theme="dark"
-  ></script>
-  
-  <openai-chatkit></openai-chatkit>
+<!-- 🔹 TechFix.it Chatbot -->
+<script 
+  src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
+  data-workflow-id="wf_6903d00d98cc819085e24f70bffe395302c200bc7105081d"
+  data-key="domain_pk_6903bb78beac8190956156aae63928e50b1a76750edd71d9"
+  data-title="TechFix Assistant"
+  data-subtitle="พร้อมช่วยเหลือคุณทุกเรื่องการแจ้งซ่อม"
+  data-avatar="image/logo2.png"
+  data-theme="dark"
+></script>
 
+<script>
+  window.addEventListener("load", () => {
+    setTimeout(() => {
+      const chatButton = document.querySelector("chatkit-widget button, chatkit-launcher, .chatkit-launcher");
+      if (chatButton) chatButton.click();
+    }, 1500);
+  });
+</script>
+
+<openai-chatkit></openai-chatkit>
+
+</body>
+</html>
 </body>
 </html>
