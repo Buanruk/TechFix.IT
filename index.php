@@ -34,8 +34,13 @@ function t($key) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TechFix.it</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+  integrity="sha512-rXn+qI6JzYHhN8V8dZ4x0zEj2qQv4C4Fyxz8Vrj6Zr7vG2Zq3Kp2zYfqrlj3Eo4p7a2FJc9eq2bHqRnbjdc+gw=="
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"
+/>
   <style>
     :root{
       --bg:#0E111B; --bg-soft:#111627; --card:#151B27; --brand:#4F9DFF; --accent:#FDB913;
