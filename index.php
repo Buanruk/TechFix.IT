@@ -389,7 +389,7 @@ handleStickyFade();
 <!-- 🔹 TechFix.it Chatbot -->
 <script 
   src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
-  data-workflow-id="wf_6903b9ce55808190a1b43e06848c640900ce1c193bb32c48"
+  data-workflow-id="wf_6903d00d98cc819085e24f70bffe395302c200bc7105081d"
   data-key="domain_pk_6903bb78beac8190956156aae63928e50b1a76750edd71d9"
   data-title="TechFix Assistant"
   data-subtitle="พร้อมช่วยเหลือคุณทุกเรื่องการแจ้งซ่อม"
