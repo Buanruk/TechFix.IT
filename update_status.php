@@ -1,5 +1,5 @@
 <?php
-// /update_status.php — อัปเดตสถานะ + Push LINE (แก้ 415 แล้ว)
+// /update_status.php — แก้ไขให้รับ technician_id และอัปเดตพร้อมกัน
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 date_default_timezone_set('Asia/Bangkok');
@@ -17,29 +17,49 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   exit;
 }
 
-// รับค่า
+// 1. ‼️‼️‼️ รับค่า (เพิ่ม technician_id) ‼️‼️‼️
 $id     = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 $status = $_POST['status'] ?? '';
+$tech_id = isset($_POST['technician_id']) && $_POST['technician_id'] !== '' ? (int)$_POST['technician_id'] : null;
+
 $allowed = ['new','in_progress','done'];
+$job = null; // เตรียมตัวแปร job ไว้
 
 if ($id > 0 && in_array($status, $allowed, true)) {
 
-  // 1. อัปเดตสถานะ (ทำก่อนเสมอ)
-  $stmt = $conn->prepare("UPDATE device_reports SET status = ? WHERE id = ?");
-  $stmt->bind_param("si", $status, $id);
+  // 2. ‼️‼️‼️ อัปเดต DB (แบบใหม่) ‼️‼️‼️
+  // ถ้ามีการส่ง tech_id มา (และสถานะเป็น in_progress) ให้อัปเดตช่างด้วย
+  if ($status === 'in_progress' && $tech_id !== null && $tech_id > 0) {
+      
+      // อัปเดตสถานะ + ID ช่าง + ชื่อช่าง (ดึงจากตาราง technicians) ในคราวเดียว
+      // *** ตรวจสอบให้แน่ใจว่าคุณมีตาราง 'technicians' และคอลัมน์ 'name' ***
+      $stmt = $conn->prepare(
+          "UPDATE device_reports SET
+              status = ?,
+              technician_id = ?,
+              assigned_technician = (SELECT name FROM technicians WHERE id = ?)
+           WHERE id = ?"
+      );
+      $stmt->bind_param("siii", $status, $tech_id, $tech_id, $id);
+  
+  } else {
+      // อัปเดตเฉพาะสถานะ (กรณีเป็น 'done' หรือ 'new' หรือไม่เลือกช่าง)
+      $stmt = $conn->prepare("UPDATE device_reports SET status = ? WHERE id = ?");
+      $stmt->bind_param("si", $status, $id);
+  }
   $stmt->execute();
   $stmt->close();
 
-  $msg = null; // ตัวแปรเก็บข้อความที่จะส่ง
-  $line_user_id = null; // ตัวแปรเก็บ ID ผู้ใช้
+  // 3. ดึงข้อมูล (ทำหลัง UPDATE)
+  // ตอนนี้ข้อมูล 'assigned_technician' จะเป็นข้อมูลล่าสุดที่เพิ่งอัปเดตไป
+  $msg = null;
+  $line_user_id = null;
 
-  // 2. ถ้าสถานะเป็น "กำลังทำ" หรือ "เสร็จแล้ว" ให้เตรียมส่ง LINE
   if ($status === 'in_progress' || $status === 'done') {
-
-    // ดึงข้อมูลงานซ่อม (รวมถึง line_user_id และชื่อช่าง)
-    // *** แก้ 'technician_name' ถ้าชื่อคอลัมน์ของคุณไม่ตรง ***
+    
+    // เราต้อง SELECT ข้อมูลทั้งหมดอีกครั้งเพื่อเอา line_user_id และข้อมูลอื่นๆ
     $q = $conn->prepare("SELECT username, device_type, serial_number, floor, issue_description,
-                         queue_number, line_user_id, technician_name
+                         queue_number, line_user_id, assigned_technician
                          FROM device_reports WHERE id = ?");
     $q->bind_param("i", $id);
     $q->execute();
@@ -50,14 +70,18 @@ if ($id > 0 && in_array($status, $allowed, true)) {
       $line_user_id = $job['line_user_id'];
       $queue = $job['queue_number'] ?? '-';
       
-      // ‼️‼️‼️ ส่วนที่เพิ่มเข้ามา ‼️‼️‼️
       if ($status === 'in_progress') {
-        $tech_name = $job['technician_name'] ?? 'ไม่ระบุ';
-        $msg = "คิว {$queue} ของคุณ\n"
-             . "สถานะ: 🔧 กำลังดำเนินการซ่อม\n"
-             . "รับการซ่อมโดยช่าง: {$tech_name}";
-      
-      // ส่วน "เสร็จแล้ว" ที่คุณมีอยู่แล้ว
+        // ‼️‼️‼️ จุดที่แก้ไข ‼️‼️‼️
+        // $job['assigned_technician'] จะมีค่าแล้ว เพราะเรา UPDATE ไปในขั้นตอนที่ 2
+        $tech_name = $job['assigned_technician'] ?? 'ไม่ระบุ'; 
+        
+        // กันไม่ส่งถ้าไม่มีชื่อช่าง
+        if ($tech_name !== 'ไม่ระบุ' && $tech_name !== null) {
+            $msg = "คิว {$queue} ของคุณ\n"
+                 . "สถานะ: 🔧 กำลังดำเนินการซ่อม\n"
+                 . "รับการซ่อมโดยช่าง: {$tech_name}";
+        }
+
       } elseif ($status === 'done') {
         $msg = "แจ้งเตือนจาก techfix.asia\n"
              . "งานซ่อมคิว: {$queue}\n"
@@ -70,10 +94,9 @@ if ($id > 0 && in_array($status, $allowed, true)) {
     }
   }
 
-  // 3. ถ้มี $msg และ $line_user_id ที่ต้องส่ง ให้ส่ง Push
+  // 4. ส่ง LINE (ถ้ามี $msg และ $line_user_id)
   if ($msg && $line_user_id) {
     
-    // === ส่ง LINE Push (สำคัญ: header ต้องเป็นสตริงแบบนี้) ===
     $url = 'https://api.line.me/v2/bot/message/push';
     $headers = [
       'Content-Type: application/json',
@@ -96,7 +119,6 @@ if ($id > 0 && in_array($status, $allowed, true)) {
     $err  = curl_error($ch);
     curl_close($ch);
 
-    // Log ตรวจสอบผล push
     @file_put_contents(__DIR__ . "/line_push_log.txt",
       date("Y-m-d H:i:s")." id=$id status=$status http=$http err=$err res=$res\n", FILE_APPEND);
   }
@@ -104,7 +126,7 @@ if ($id > 0 && in_array($status, $allowed, true)) {
 
 $conn->close();
 
-// กลับหน้าเดิม ถ้าไม่มีก็กลับหน้าแรก
+// กลับหน้าเดิม
 $back = $_SERVER['HTTP_REFERER'] ?? '/';
 header("Location: {$back}");
 exit;
