@@ -382,10 +382,16 @@ window.addEventListener('scroll', handleStickyFade, { passive: true });
 handleStickyFade();
   </script>
 
+<!-- 🔹 Chatbot TechFix.it (ฝังเฉพาะหน้านี้) -->
 <script 
   src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
   data-workflow-id="wf_6903b9ce55808190a1b43e06848c640900ce1c193bb32c48"
   data-key="domain_pk_6903bb78beac8190956156aae63928e50b1a76750edd71d9"
+  data-title="TechFix Assistant"
+  data-subtitle="พร้อมช่วยเหลือคุณทุกเรื่องการแจ้งซ่อม"
+  data-avatar="image/logo2.png"
+  data-theme="dark"
 ></script>
+
 </body>
 </html>
