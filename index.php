@@ -150,134 +150,7 @@ function t($key) {
       .reveal{transition:none}
     }
     
-    /* ========== AI Chat Widget Styles (เพิ่มเข้ามาใหม่) ========== */
-    #ai-chat-bubble {
-        position: fixed;
-        bottom: 25px;
-        left: 25px;
-        background-color: var(--brand); /* ใช้สี --brand จากธีมของคุณ */
-        color: white;
-        padding: 12px 18px;
-        border-radius: 30px;
-        cursor: pointer;
-        font-size: 16px;
-        font-weight: 500;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        z-index: 999;
-        transition: all 0.2s ease-in-out;
-    }
-
-    #ai-chat-bubble:hover {
-        transform: scale(1.05);
-        filter: brightness(1.1);
-    }
-
-    #ai-chat-window {
-        display: none; /* ซ่อนไว้ตอนแรก */
-        position: fixed;
-        bottom: 25px;
-        left: 25px;
-        width: 360px; /* ขนาดหน้าต่างแชท */
-        height: 500px; /* ความสูง */
-        background: var(--bg-soft); /* ใช้สีพื้นหลังนุ่มๆ จากธีม */
-        border-radius: 15px;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-        z-index: 1000;
-        flex-direction: column;
-        overflow: hidden; /* ซ่อนส่วนที่เกินขอบ */
-        border: 1px solid rgba(255,255,255,.06);
-    }
-
-    #ai-chat-header {
-        background: var(--bg); /* ใช้สีพื้นหลังหลัก */
-        color: var(--text);
-        padding: 15px 20px;
-        font-size: 18px;
-        font-weight: bold;
-        border-top-left-radius: 15px;
-        border-top-right-radius: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid rgba(255,255,255,.06);
-    }
-
-    #ai-chat-close {
-        cursor: pointer;
-        font-size: 28px;
-        font-weight: 300;
-        line-height: 1;
-        color: var(--muted);
-    }
-    #ai-chat-close:hover {
-        color: var(--text);
-    }
-
-    #ai-chat-body {
-        flex-grow: 1;
-        padding: 20px;
-        overflow-y: auto; /* มี scrollbar ถ้าข้อความยาว */
-        background: var(--bg-soft);
-        color: var(--muted);
-        font-size: 15px;
-        line-height: 1.6;
-    }
-
-    /* นี่คือส่วนแสดงผลคำตอบ */
-    #ai-response {
-        white-space: pre-wrap; /* ทำให้ \n ขึ้นบรรทัดใหม่ */
-    }
-    
-    #ai-response strong {
-        color: var(--text); /* ทำให้ตัวหนา (คุณ, AI) ชัดขึ้น */
-    }
-
-    #ai-chat-footer {
-        padding: 15px;
-        border-top: 1px solid rgba(255,255,255,.06);
-        background: var(--bg);
-    }
-
-    #ai-chat-footer form {
-        display: flex;
-    }
-
-    #problem-input {
-        flex-grow: 1;
-        border: 1px solid rgba(255,255,255,.1);
-        background: var(--bg-soft);
-        color: var(--text);
-        border-radius: 20px;
-        padding: 10px 15px;
-        font-size: 14px;
-        outline: none; /* เอาเส้นขอบตอน focus ออก */
-    }
-    #problem-input:focus {
-        border-color: var(--brand);
-        box-shadow: 0 0 0 2px rgba(79,157,255,.25);
-    }
-
-    #ai-chat-footer button {
-        background: var(--brand);
-        color: white;
-        border: none;
-        border-radius: 20px;
-        padding: 10px 15px;
-        margin-left: 10px;
-        cursor: pointer;
-        font-weight: 500;
-        transition: filter .2s ease;
-    }
-    #ai-chat-footer button:hover {
-        filter: brightness(1.1);
-    }
-
-    #loading {
-        color: var(--muted);
-        font-style: italic;
-        font-size: 14px;
-    }
-    /* ===== จบส่วน AI Chat Widget Styles ===== */
+    /* (โค้ด CSS ของ Chat Widget เดิมถูกลบออกจากส่วนนี้แล้ว) */
     
   </style>
 </head>
@@ -437,32 +310,6 @@ function t($key) {
     <p>© <?php echo date('Y'); ?> TechFix.it — บริการซ่อมอุปกรณ์ไอทีครบวงจร</p>
   </footer>
 
-  <div id="ai-chat-bubble">
-      TechFix AI แก้ปัญหาขั้นต้น 
-  </div>
-
-  <div id="ai-chat-window">
-      
-      <div id="ai-chat-header">
-          <span>AI ช่วยวิเคราะห์ปัญหา</span>
-          <span id="ai-chat-close">&times;</span>
-      </div>
-      
-      <div id="ai-chat-body">
-          <div id="ai-response">
-              <strong>AI TechFix:</strong> สวัสดีครับ! อยากลองแก้ปัญหาขั้นต้นเองพิมพ์ปัญหาการใช้งานได้เลยครับ (เช่น "โน้ตบุ๊กเปิดไม่ติด")
-          </div>
-          <p id="loading" style="display: none;">AI กำลังพิมพ์...</p>
-      </div>
-
-      <div id="ai-chat-footer">
-          <form id="ai-form">
-              <input type="text" id="problem-input" placeholder="อธิบายปัญหาของคุณ..." autocomplete="off">
-              <button type="submit">ส่ง</button>
-          </form>
-      </div>
-
-  </div>
   <script>
     // ===== IntersectionObserver: reveal on scroll =====
     const io = new IntersectionObserver((entries)=>{
@@ -535,62 +382,10 @@ window.addEventListener('scroll', handleStickyFade, { passive: true });
 handleStickyFade();
   </script>
 
-  <script>
-  // 1. เลือก Element ทั้งหมดที่เกี่ยวข้อง
-  const chatBubble = document.getElementById('ai-chat-bubble');
-  const chatWindow = document.getElementById('ai-chat-window');
-  const chatClose = document.getElementById('ai-chat-close');
-  const aiForm = document.getElementById('ai-form');
-  const problemInput = document.getElementById('problem-input');
-  const aiResponse = document.getElementById('ai-response');
-  const loading = document.getElementById('loading');
-  const chatBody = document.getElementById('ai-chat-body');
-
-  // 2. Logic การเปิด-ปิดหน้าต่างแชท
-  chatBubble.addEventListener('click', () => {
-      chatWindow.style.display = 'flex'; // 'flex' เพราะเราจัดโครงสร้างด้วย flexbox
-      chatBubble.style.display = 'none'; // ซ่อนปุ่มกลม
-  });
-
-  chatClose.addEventListener('click', () => {
-      chatWindow.style.display = 'none';
-      chatBubble.style.display = 'block'; // โชว์ปุ่มกลมกลับมา
-  });
-
-  // 3. Logic การส่งข้อความ
-  aiForm.addEventListener('submit', async function(event) {
-      event.preventDefault(); 
-      const userMessage = problemInput.value;
-      if (!userMessage) return;
-
-      // แสดงข้อความของผู้ใช้ในหน้าต่างแชท
-      aiResponse.innerHTML += `\n\n<strong>คุณ:</strong> ${userMessage}`;
-      loading.style.display = 'block';
-      problemInput.disabled = true; // ปิดช่องพิมพ์ชั่วคราว
-      problemInput.value = ''; // ล้างช่องพิมพ์
-      chatBody.scrollTop = chatBody.scrollHeight; // เลื่อนลงล่างสุด
-
-      try {
-          // ยิงไปที่ไฟล์หลังบ้าน ai_rulebased.php
-          const response = await fetch('ai_rulebased.php', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ message: userMessage })
-          });
-          const data = await response.json();
-          
-          // แสดงคำตอบของ AI
-          aiResponse.innerHTML += `\n\n<strong>AI TechFix:</strong> ${data.reply}`;
-
-      } catch (error) {
-          aiResponse.innerHTML += `\n\n<strong>AI TechFix:</strong> เกิดข้อผิดพลาด: ${error.message}`;
-      } finally {
-          loading.style.display = 'none';
-          problemInput.disabled = false;
-          problemInput.focus();
-          chatBody.scrollTop = chatBody.scrollHeight; // เลื่อนลงล่างสุดอีกครั้ง
-      }
-  });
-  </script>
-  </body>
+  <script 
+  src="https://oai.openai.com/chatkit/v1/chatkit.js"
+  data-workflow-id="wf_6903b9ce55808190a1b43e06848c640900ce1c193bb32c48"
+  data-key="domain_pk_6903bb78beac8190956156aae63928e50b1a76750edd71d9"
+></script>
+</body>
 </html>
