@@ -588,7 +588,7 @@ handleStickyFade();
           loading.style.display = 'none';
           problemInput.disabled = false;
           problemInput.focus();
-          chatBody.scrollTop = chatBody.scrollHeight; // เลื่อนลงล่างสุดอีกครั้ง
+          chatBody.scrollTop = chatBody.scrollHeight; 
       }
   });
   </script>
