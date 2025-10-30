@@ -405,6 +405,9 @@ handleStickyFade();
     }, 1500);
   });
 </script>
+
+<openai-chatkit></openai-chatkit>
+
 </body>
 </html>
 </body>
