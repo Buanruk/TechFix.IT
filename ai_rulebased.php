@@ -125,12 +125,6 @@ $knowledgeBase = [
     ]
 ];
 
-/*
-=================================================
- 2. ระบบค้นหา (Search Logic) - (ยังใช้แบบเดิม)
-=================================================
-*/
-
 // รับข้อความจาก frontend
 $data = json_decode(file_get_contents("php://input"), true);
 $userMessage = $data["message"] ?? "";
