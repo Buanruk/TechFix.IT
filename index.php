@@ -28,8 +28,6 @@ function t($key) {
     return htmlspecialchars($lang[$key] ?? $key, ENT_QUOTES, 'UTF-8');
 }
 ?>
-
-<!DOCTYPE html>
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -151,10 +149,139 @@ function t($key) {
       .layer,.floating{animation:none;transform:none !important}
       .reveal{transition:none}
     }
+    
+    /* ========== AI Chat Widget Styles (เพิ่มเข้ามาใหม่) ========== */
+    #ai-chat-bubble {
+        position: fixed;
+        bottom: 25px;
+        left: 25px;
+        background-color: var(--brand); /* ใช้สี --brand จากธีมของคุณ */
+        color: white;
+        padding: 12px 18px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        z-index: 999;
+        transition: all 0.2s ease-in-out;
+    }
+
+    #ai-chat-bubble:hover {
+        transform: scale(1.05);
+        filter: brightness(1.1);
+    }
+
+    #ai-chat-window {
+        display: none; /* ซ่อนไว้ตอนแรก */
+        position: fixed;
+        bottom: 25px;
+        left: 25px;
+        width: 360px; /* ขนาดหน้าต่างแชท */
+        height: 500px; /* ความสูง */
+        background: var(--bg-soft); /* ใช้สีพื้นหลังนุ่มๆ จากธีม */
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        flex-direction: column;
+        overflow: hidden; /* ซ่อนส่วนที่เกินขอบ */
+        border: 1px solid rgba(255,255,255,.06);
+    }
+
+    #ai-chat-header {
+        background: var(--bg); /* ใช้สีพื้นหลังหลัก */
+        color: var(--text);
+        padding: 15px 20px;
+        font-size: 18px;
+        font-weight: bold;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+
+    #ai-chat-close {
+        cursor: pointer;
+        font-size: 28px;
+        font-weight: 300;
+        line-height: 1;
+        color: var(--muted);
+    }
+    #ai-chat-close:hover {
+        color: var(--text);
+    }
+
+    #ai-chat-body {
+        flex-grow: 1;
+        padding: 20px;
+        overflow-y: auto; /* มี scrollbar ถ้าข้อความยาว */
+        background: var(--bg-soft);
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.6;
+    }
+
+    /* นี่คือส่วนแสดงผลคำตอบ */
+    #ai-response {
+        white-space: pre-wrap; /* ทำให้ \n ขึ้นบรรทัดใหม่ */
+    }
+    
+    #ai-response strong {
+        color: var(--text); /* ทำให้ตัวหนา (คุณ, AI) ชัดขึ้น */
+    }
+
+    #ai-chat-footer {
+        padding: 15px;
+        border-top: 1px solid rgba(255,255,255,.06);
+        background: var(--bg);
+    }
+
+    #ai-chat-footer form {
+        display: flex;
+    }
+
+    #problem-input {
+        flex-grow: 1;
+        border: 1px solid rgba(255,255,255,.1);
+        background: var(--bg-soft);
+        color: var(--text);
+        border-radius: 20px;
+        padding: 10px 15px;
+        font-size: 14px;
+        outline: none; /* เอาเส้นขอบตอน focus ออก */
+    }
+    #problem-input:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 2px rgba(79,157,255,.25);
+    }
+
+    #ai-chat-footer button {
+        background: var(--brand);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 10px 15px;
+        margin-left: 10px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: filter .2s ease;
+    }
+    #ai-chat-footer button:hover {
+        filter: brightness(1.1);
+    }
+
+    #loading {
+        color: var(--muted);
+        font-style: italic;
+        font-size: 14px;
+    }
+    /* ===== จบส่วน AI Chat Widget Styles ===== */
+    
   </style>
 </head>
 <body>
-  <!-- NAVBAR -->
   <header class="navbar" role="navigation" aria-label="เมนูหลัก">
     <div class="logo"><span class="dot"></span> TechFix.it</div>
 
@@ -172,11 +299,9 @@ function t($key) {
 </nav>
   </header>
 
-  <!-- HERO with parallax layers -->
   <section class="hero" aria-label="หน้าแรก">
     <div class="hero-bg"></div>
 
-    <!-- Parallax decorative layers -->
     <img class="layer" data-parallax data-speed="-0.25" src="image/logo2.png" alt="" style="top:10%;left:-4%;width:28vw;max-width:360px;opacity:.35" />
     <img class="layer floating" data-parallax data-speed="0.12" src="image/logo2.png" alt="" style="top:18%;right:-6%;width:30vw;max-width:400px;opacity:.28" />
     <img class="layer" data-parallax data-speed="-0.15" alt="" style="bottom:-6%;left:8%;width:22vw;max-width:300px;opacity:.22" />
@@ -185,7 +310,6 @@ function t($key) {
       <h1 class="reveal">บริการซ่อมคอมพิวเตอร์ <span>TechFix.it</span></h1>
       <p class="lead reveal" style="transition-delay:.08s">แจ้งซ่อมผ่าน LINE Bot • ติดตามสถานะแบบเรียลไทม์ • รองรับมือถือเต็มรูปแบบ</p>
 
-      <!-- ปุ่ม 2 อัน ข้างกัน -->
       <div class="hero-cta reveal" style="transition-delay:.15s">
         <a href="repair_detail.php" class="btn ghost" aria-label="คิวแจ้งซ่อม">
           <i class="fas fa-clipboard-list" aria-hidden="true"></i> คิวแจ้งซ่อม
@@ -196,7 +320,6 @@ function t($key) {
       </div>
     </div>
 
-    <!-- QR floating badge -->
     <aside class="qr-badge" aria-label="สแกนเพิ่มเพื่อน LINE">
       <div class="qr-card reveal" style="transition-delay:.25s">
         <img src="image/qr.jpg" alt="QR LINE" style="width:120px;aspect-ratio:1/1;border-radius:10px;display:block">
@@ -255,12 +378,10 @@ function t($key) {
 
 </main>
 
-  <!-- Masonry showcase -->
   <section class="wrap">
   <h3 class="grid-title">ตัวอย่างหมวดอุปกรณ์ที่รับซ่อม</h3>
   <div class="masonry">
 
-    <!-- ปัญหาด้านคอมพิวเตอร์ (4:3) -->
     <article class="card reveal">
       <div class="ph-img" data-parallax data-speed="0.06" style="aspect-ratio:4/3; overflow:hidden; border-radius:16px;">
         <img 
@@ -273,7 +394,6 @@ function t($key) {
       <div class="card-body" style="font-weight:600; text-align:center;">ปัญหาด้านคอมพิวเตอร์</div>
     </article>
 
-    <!-- ปัญหาด้านโน๊ตบุ๊ค (4:5) -->
     <article class="card reveal">
       <div class="ph-img" data-parallax data-speed="-0.04" style="aspect-ratio:4/5; overflow:hidden; border-radius:16px;">
         <img 
@@ -286,7 +406,6 @@ function t($key) {
       <div class="card-body" style="font-weight:600; text-align:center;">ปัญหาด้านโน๊ตบุ๊ค</div>
     </article>
 
-    <!-- ปัญหาด้านปริ้นเตอร์ (4:3) -->
     <article class="card reveal">
       <div class="ph-img" data-parallax data-speed="0.08" style="aspect-ratio:4/3; overflow:hidden; border-radius:16px;">
         <img 
@@ -299,7 +418,6 @@ function t($key) {
       <div class="card-body" style="font-weight:600; text-align:center;">ปัญหาด้านปริ้นเตอร์</div>
     </article>
 
-    <!-- อุปกรณ์เครือข่าย (4:3) -->
     <article class="card reveal">
       <div class="ph-img" data-parallax data-speed="-0.05" style="aspect-ratio:4/3; overflow:hidden; border-radius:16px;">
         <img 
@@ -315,13 +433,36 @@ function t($key) {
   </div>
 </section>
 
-
-
-
   <footer class="footer">
     <p>© <?php echo date('Y'); ?> TechFix.it — บริการซ่อมอุปกรณ์ไอทีครบวงจร</p>
   </footer>
 
+  <div id="ai-chat-bubble">
+      TechFix AI แก้ปัญหาขั้นต้น 
+  </div>
+
+  <div id="ai-chat-window">
+      
+      <div id="ai-chat-header">
+          <span>AI ช่วยวิเคราะห์ปัญหา</span>
+          <span id="ai-chat-close">&times;</span>
+      </div>
+      
+      <div id="ai-chat-body">
+          <div id="ai-response">
+              <strong>AI TechFix:</strong> สวัสดีครับ! อยากลองแก้ปัญหาขั้นต้นเองพิมพ์ปัญหาการใช้งานได้เลยครับ (เช่น "โน้ตบุ๊กเปิดไม่ติด")
+          </div>
+          <p id="loading" style="display: none;">AI กำลังพิมพ์...</p>
+      </div>
+
+      <div id="ai-chat-footer">
+          <form id="ai-form">
+              <input type="text" id="problem-input" placeholder="อธิบายปัญหาของคุณ..." autocomplete="off">
+              <button type="submit">ส่ง</button>
+          </form>
+      </div>
+
+  </div>
   <script>
     // ===== IntersectionObserver: reveal on scroll =====
     const io = new IntersectionObserver((entries)=>{
@@ -393,5 +534,63 @@ window.addEventListener('scroll', handleStickyFade, { passive: true });
 // เรียกใช้ครั้งแรกตอนโหลดหน้าเว็บ (เหมือนเดิม)
 handleStickyFade();
   </script>
-</body>
+
+  <script>
+  // 1. เลือก Element ทั้งหมดที่เกี่ยวข้อง
+  const chatBubble = document.getElementById('ai-chat-bubble');
+  const chatWindow = document.getElementById('ai-chat-window');
+  const chatClose = document.getElementById('ai-chat-close');
+  const aiForm = document.getElementById('ai-form');
+  const problemInput = document.getElementById('problem-input');
+  const aiResponse = document.getElementById('ai-response');
+  const loading = document.getElementById('loading');
+  const chatBody = document.getElementById('ai-chat-body');
+
+  // 2. Logic การเปิด-ปิดหน้าต่างแชท
+  chatBubble.addEventListener('click', () => {
+      chatWindow.style.display = 'flex'; // 'flex' เพราะเราจัดโครงสร้างด้วย flexbox
+      chatBubble.style.display = 'none'; // ซ่อนปุ่มกลม
+  });
+
+  chatClose.addEventListener('click', () => {
+      chatWindow.style.display = 'none';
+      chatBubble.style.display = 'block'; // โชว์ปุ่มกลมกลับมา
+  });
+
+  // 3. Logic การส่งข้อความ
+  aiForm.addEventListener('submit', async function(event) {
+      event.preventDefault(); 
+      const userMessage = problemInput.value;
+      if (!userMessage) return;
+
+      // แสดงข้อความของผู้ใช้ในหน้าต่างแชท
+      aiResponse.innerHTML += `\n\n<strong>คุณ:</strong> ${userMessage}`;
+      loading.style.display = 'block';
+      problemInput.disabled = true; // ปิดช่องพิมพ์ชั่วคราว
+      problemInput.value = ''; // ล้างช่องพิมพ์
+      chatBody.scrollTop = chatBody.scrollHeight; // เลื่อนลงล่างสุด
+
+      try {
+          // ยิงไปที่ไฟล์หลังบ้าน ai_rulebased.php
+          const response = await fetch('ai_rulebased.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message: userMessage })
+          });
+          const data = await response.json();
+          
+          // แสดงคำตอบของ AI
+          aiResponse.innerHTML += `\n\n<strong>AI TechFix:</strong> ${data.reply}`;
+
+      } catch (error) {
+          aiResponse.innerHTML += `\n\n<strong>AI TechFix:</strong> เกิดข้อผิดพลาด: ${error.message}`;
+      } finally {
+          loading.style.display = 'none';
+          problemInput.disabled = false;
+          problemInput.focus();
+          chatBody.scrollTop = chatBody.scrollHeight; // เลื่อนลงล่างสุดอีกครั้ง
+      }
+  });
+  </script>
+  </body>
 </html>
