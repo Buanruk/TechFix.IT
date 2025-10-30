@@ -34,12 +34,11 @@ function t($key) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TechFix.it</title>
-  <link
-  rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-  integrity="sha512-rXn+qI6JzYHhN8V8dZ4x0zEj2qQv4C4Fyxz8Vrj6Zr7vG2Zq3Kp2zYfqrlj3Eo4p7a2FJc9eq2bHqRnbjdc+gw=="
-  crossorigin="anonymous"
-  referrerpolicy="no-referrer"
+  <link 
+  rel="stylesheet" 
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" 
+  crossorigin="anonymous" 
+  referrerpolicy="no-referrer" 
 />
   <style>
     :root{
