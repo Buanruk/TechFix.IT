@@ -382,7 +382,7 @@ window.addEventListener('scroll', handleStickyFade, { passive: true });
 handleStickyFade();
   </script>
 
-<!-- 🔹 Chatbot TechFix.it (ฝังเฉพาะหน้านี้) -->
+<!-- 🔹 Chatbot TechFix.it (เปิดอัตโนมัติเมื่อโหลดหน้าเว็บ) -->
 <script 
   src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
   data-workflow-id="wf_6903b9ce55808190a1b43e06848c640900ce1c193bb32c48"
@@ -391,7 +391,22 @@ handleStickyFade();
   data-subtitle="พร้อมช่วยเหลือคุณทุกเรื่องการแจ้งซ่อม"
   data-avatar="image/logo2.png"
   data-theme="dark"
+  id="techfix-chatbot"
 ></script>
+
+<script>
+  // ✅ เด้งเปิดอัตโนมัติหลังโหลดหน้าเสร็จ
+  window.addEventListener("load", function() {
+    // รอให้ chatkit โหลดเสร็จก่อน แล้วค่อยเปิดอัตโนมัติ
+    setTimeout(() => {
+      const chatButton = document.querySelector("chatkit-widget button, chatkit-launcher, .chatkit-launcher");
+      if (chatButton) {
+        chatButton.click(); // จำลองการคลิกเปิด
+      }
+    }, 1500); // หน่วง 1.5 วินาทีหลังโหลด เพื่อให้ chatkit สร้าง DOM เสร็จ
+  });
+</script>
+
 
 </body>
 </html>
