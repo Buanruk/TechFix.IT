@@ -344,7 +344,7 @@ handleStickyFade();
   <script 
     src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
     data-workflow-id="wf_6903b9ce55808190a1b43e06848c640900ce1c193bb32c48"
-    data-key="domain_pk_6903bb78beac8190956156aae63928e50b1a76750edd71d9"
+    data-key="domain_pk_6903bedada08819093c4448e52217fcf07584f90ccd14ee2"
     data-title="TechFix Assistant"
     data-subtitle="พร้อมช่วยเหลือค้นหาอาการเบื้องต้น"
     data-avatar="image/logo2.png"
