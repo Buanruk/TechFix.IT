@@ -1,6 +1,6 @@
 <?php
 // ใส่ Channel access token ของ LINE Messaging API
-const LINE_CH_ACCESS_TOKEN = '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU=';
+const LINE_CH_ACCESS_TOKEN = '6PPEuPrvNfNYozuFtj7IRjpo/kNq26avxAXzMFBTBodJw9mCmpQNJ7v08B95yMzEUO2swglp56rkKNt1zU5Ec09stF4SZ4cqqnxWHRep6ER/PTWOXIjAksbOA0BmlXhMXWD0pYG10w8maeAOYjRmYwdB04t89/1O/w1cDnyilFU=';
 
 function line_push($to, array $messages){
   if (!$to || !LINE_CH_ACCESS_TOKEN) return false;
