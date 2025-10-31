@@ -1,6 +1,6 @@
 <?php
 /* line_push.php */
-define('LINE_CHANNEL_ACCESS_TOKEN', '7f0rLD4oN4UjV/DY535T4LbemrH+s7OT2lCxMk1dMJdWymlDgLvc89XZvvG/qBNg19e9/HvpKHsgxBFEHkXQlDQN5B8w3L0yhcKCSR51vfvTvUm0o5GQcq+jRlT+4TiQNN0DbIL2jI+adHfOz44YRQdB04t89/1O/w1cDnyilFU='); // <-- ใส่ของคุณ
+define('LINE_CHANNEL_ACCESS_TOKEN', '6PPEuPrvNfNYozuFtj7IRjpo/kNq26avxAXzMFBTBodJw9mCmpQNJ7v08B95yMzEUO2swglp56rkKNt1zU5Ec09stF4SZ4cqqnxWHRep6ER/PTWOXIjAksbOA0BmlXhMXWD0pYG10w8maeAOYjRmYwdB04t89/1O/w1cDnyilFU='); // <-- ใส่ของคุณ
 
 /**
  * ส่ง Push Message ไปหา user หนึ่งคน
