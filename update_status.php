@@ -2,7 +2,7 @@
 // /update_status.php — ฉบับแก้ไข เรียกใช้ line_push.php
 
 // ‼️‼️‼️ 1. ต้อง include ไฟล์ฟังก์ชันที่สร้างขึ้นมาใหม่ ‼️‼️‼️
-require_once __DIR__ . 'line_push.php'; // หรือระบุ path ให้ถูก
+require_once __DIR__ . '/line_push.php'; // หรือระบุ path ให้ถูก
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 date_default_timezone_set('Asia/Bangkok');
