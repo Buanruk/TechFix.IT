@@ -322,8 +322,8 @@ function t($key) {
 
     <aside class="qr-badge" aria-label="สแกนเพิ่มเพื่อน LINE">
       <div class="qr-card reveal" style="transition-delay:.25s">
-        <img src="image/qr.jpg" alt="QR LINE" style="width:120px;aspect-ratio:1/1;border-radius:10px;display:block">
-        <small style="color:var(--muted)">@429fxsnw</small>
+        <img src="image/qr2.jpg" alt="QR LINE" style="width:120px;aspect-ratio:1/1;border-radius:10px;display:block">
+        <small style="color:var(--muted)">@336tecaf</small>
       </div>
     </aside>
   </section>
